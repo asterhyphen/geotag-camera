@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -36,67 +37,142 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
   final picker = ImagePicker();
-  bool watermarkOn = true;
+
+  bool busy = false;
+  bool includeMap = false; // reserved for future
+  String filter = 'none';
 
   Future<void> capture() async {
-    final XFile? photo =
-        await picker.pickImage(source: ImageSource.camera, imageQuality: 100);
-    if (photo == null) return;
+    if (busy) return;
+    setState(() => busy = true);
 
-    final originalBytes = await photo.readAsBytes();
-
-    LocationPermission permission = await Geolocator.checkPermission(
-);
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) return;
-
-    final pos = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    final placemarks =
-        await placemarkFromCoordinates(pos.latitude, pos.longitude);
-    final p = placemarks.first;
-
-    final location =
-        "${p.locality}, ${p.administrativeArea}, ${p.country}";
-    final address =
-        "${p.street}, ${p.subLocality}, ${p.postalCode}";
-    final latLng =
-        "Lat ${pos.latitude.toStringAsFixed(6)}°  Long ${pos.longitude.toStringAsFixed(6)}°";
-    final dateTime = formatDateTime();
-
-    final cleanBytes = await compute(processImage, originalBytes);
-
-    Uint8List finalBytes = cleanBytes;
-    if (watermarkOn) {
-      await Future.delayed(const Duration(milliseconds: 16));
-      finalBytes = await addWatermark(
-        imageBytes: cleanBytes,
-        location: location,
-        address: address,
-        latLng: latLng,
-        dateTime: dateTime,
+    try {
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 100,
       );
-    }
+      if (photo == null) {
+        setState(() => busy = false);
+        return;
+      }
 
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    await saveToGallery(cleanBytes, "IMG_$ts.jpg");
-    await saveToGallery(finalBytes, "IMG_${ts}_geo.jpg");
+      final originalBytes = await photo.readAsBytes();
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() => busy = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        pos.latitude,
+        pos.longitude,
+      );
+      final p = placemarks.first;
+
+      final location = "${p.locality}, ${p.administrativeArea}, ${p.country}";
+      final address = "${p.street}, ${p.subLocality}";
+      final latLng =
+          "Lat ${pos.latitude.toStringAsFixed(6)}, "
+          "Long ${pos.longitude.toStringAsFixed(6)}";
+      final dateTime = formatDateTime();
+
+      // ---- FILTERS IN ISOLATE ----
+      final cleanBytes = await compute(processImage, {
+        'bytes': originalBytes,
+        'filter': filter,
+      });
+
+      final ts = DateTime.now().millisecondsSinceEpoch;
+
+      // ---- SAVE CLEAN IMAGE IMMEDIATELY ----
+      await saveToGallery(cleanBytes, "IMG_$ts.jpg");
+
+      // UI FREE IMMEDIATELY
+      setState(() => busy = false);
+
+      // ---- BACKGROUND WATERMARK (NON-BLOCKING) ----
+      unawaited(() async {
+        final watermarked = await addWatermark(
+          imageBytes: cleanBytes,
+          location: location,
+          address: address,
+          latLng: latLng,
+          dateTime: dateTime,
+        );
+
+        await saveToGallery(watermarked, "IMG_${ts}_geo.jpg");
+      }());
+    } catch (_) {
+      setState(() => busy = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: ElevatedButton(
-          onPressed: capture,
-          child: const Text("CAPTURE"),
-        ),
+      body: Stack(
+        children: [
+          // SHUTTER BUTTON
+          Center(
+            child: busy
+                ? const CircularProgressIndicator(color: Colors.white)
+                : GestureDetector(
+                    onTap: capture,
+                    child: Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                      ),
+                    ),
+                  ),
+          ),
+
+          // CONTROLS
+          Positioned(
+            bottom: 28,
+            left: 28,
+            right: 28,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // MAP ICON (placeholder, now responsive)
+                IconButton(
+                  icon: Icon(
+                    includeMap ? Icons.map : Icons.map_outlined,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => setState(() => includeMap = !includeMap),
+                ),
+
+                // FILTER ICON (CYCLE)
+                IconButton(
+                  icon: const Icon(Icons.filter_alt, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      filter = filter == 'none'
+                          ? 'mono'
+                          : filter == 'mono'
+                          ? 'vintage'
+                          : 'none';
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -105,20 +181,41 @@ class _CameraPageState extends State<CameraPage> {
 //// ================= MEDIASTORE =================
 
 Future<void> saveToGallery(Uint8List bytes, String name) async {
-  await _mediaChannel.invokeMethod('saveImage', {
-    'bytes': bytes,
-    'name': name,
-  });
+  await _mediaChannel.invokeMethod('saveImage', {'bytes': bytes, 'name': name});
 }
 
-//// ================= IMAGE PROCESS =================
+//// ================= FILTERS =================
 
-Uint8List processImage(Uint8List bytes) {
-  final img.Image base = img.decodeImage(bytes)!;
-  return Uint8List.fromList(img.encodeJpg(base, quality: 100));
+Uint8List processImage(Map<String, dynamic> data) {
+  final Uint8List bytes = data['bytes'];
+  final String filter = data['filter'];
+
+  img.Image image = img.decodeImage(bytes)!;
+
+  switch (filter) {
+    case 'mono':
+      image = img.grayscale(image);
+      break;
+
+    case 'vintage':
+      image = img.adjustColor(
+        image,
+        brightness: 0.02,
+        contrast: 1.1,
+        saturation: 0.85,
+      );
+      image = img.colorOffset(image, red: 8, green: 4, blue: -8);
+      break;
+
+    case 'none':
+    default:
+      break;
+  }
+
+  return Uint8List.fromList(img.encodeJpg(image, quality: 100));
 }
 
-//// ================= WATERMARK (REFERENCE MATCH) =================
+//// ================= WATERMARK =================
 
 Future<Uint8List> addWatermark({
   required Uint8List imageBytes,
@@ -136,8 +233,7 @@ Future<Uint8List> addWatermark({
 
   canvas.drawImage(uiImage, Offset.zero, Paint());
 
-  // Bottom bar — reference proportion
-  final overlayH = h * 0.23;
+  final overlayH = h * 0.22;
   final overlayTop = h - overlayH;
 
   canvas.drawRect(
@@ -145,60 +241,55 @@ Future<Uint8List> addWatermark({
     Paint()..color = const Color(0xE6000000),
   );
 
-  // ---- MAP THUMBNAIL (LEFT) ----
-  final mapSize = overlayH * 0.72;
-  final mapLeft = 24.0;
-  final mapTop = overlayTop + (overlayH - mapSize) / 2;
+  final titleSize = h * 0.045;
+  final bodySize = h * 0.032;
+  final metaSize = h * 0.028;
 
-  final rrect = RRect.fromRectAndRadius(
-    Rect.fromLTWH(mapLeft, mapTop, mapSize, mapSize),
-    const Radius.circular(16),
-  );
-
-  // Fake Google map card
-  canvas.drawRRect(
-    rrect,
-    Paint()..color = const Color(0xFF1E88E5),
-  );
-
-  // Pin
-  canvas.drawCircle(
-    Offset(mapLeft + mapSize / 2, mapTop + mapSize / 2),
-    mapSize * 0.08,
-    Paint()..color = Colors.redAccent,
-  );
-
-  // ---- TEXT BLOCK (RIGHT, OPTICALLY CENTERED) ----
-  final textLeft = mapLeft + mapSize + 28;
+  final textLeft = w * 0.08;
   double y = overlayTop + overlayH * 0.18;
 
-  final titleStyle = const TextStyle(
-    color: Colors.white,
-    fontSize: 36,
-    fontWeight: FontWeight.w600,
+  _draw(
+    canvas,
+    location,
+    TextStyle(
+      color: Colors.white,
+      fontSize: titleSize,
+      fontWeight: FontWeight.w600,
+    ),
+    textLeft,
+    y,
+    w * 0.84,
   );
+  y += titleSize * 1.2;
 
-  final bodyStyle = const TextStyle(
-    color: Colors.white70,
-    fontSize: 28,
-    height: 1.2,
+  _draw(
+    canvas,
+    address,
+    TextStyle(color: Colors.white70, fontSize: bodySize),
+    textLeft,
+    y,
+    w * 0.84,
   );
+  y += bodySize * 1.15;
 
-  final metaStyle = const TextStyle(
-    color: Colors.white60,
-    fontSize: 24,
+  _draw(
+    canvas,
+    latLng,
+    TextStyle(color: Colors.white60, fontSize: metaSize),
+    textLeft,
+    y,
+    w * 0.84,
   );
+  y += metaSize * 1.1;
 
-  _draw(canvas, location, titleStyle, textLeft, y, w - textLeft - 24);
-  y += 48;
-
-  _draw(canvas, address, bodyStyle, textLeft, y, w - textLeft - 24);
-  y += 40;
-
-  _draw(canvas, latLng, metaStyle, textLeft, y, w - textLeft - 24);
-  y += 34;
-
-  _draw(canvas, dateTime, metaStyle, textLeft, y, w - textLeft - 24);
+  _draw(
+    canvas,
+    dateTime,
+    TextStyle(color: Colors.white60, fontSize: metaSize),
+    textLeft,
+    y,
+    w * 0.84,
+  );
 
   final picture = recorder.endRecording();
   final imgOut = await picture.toImage(uiImage.width, uiImage.height);
@@ -218,6 +309,7 @@ void _draw(
     text: TextSpan(text: text, style: style),
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: maxWidth);
+
   tp.paint(canvas, Offset(x, y));
 }
 
@@ -226,7 +318,7 @@ void _draw(
 String formatDateTime() {
   final n = DateTime.now();
   final o = n.timeZoneOffset;
-  final s = o.isNegative ? "-" : "+";
+  final s = o.isNegative ? '-' : '+';
   return "${n.day.toString().padLeft(2, '0')}/"
       "${n.month.toString().padLeft(2, '0')}/"
       "${n.year} "
