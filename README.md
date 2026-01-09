@@ -1,16 +1,6 @@
-# geocam
+# Geocam
+Geo-cam allows you to click geomap-watermarked photos and save them to your gallery.
 
-A new Flutter project.
+It saves the original image as well as the watermarked image. Most geo tag apps are very slow and have a lot of ads. This app is made to work faster than the typical geotag apps. It will also be open source and not have any ads.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+> Link will be shared after app passes testing of basic functionality

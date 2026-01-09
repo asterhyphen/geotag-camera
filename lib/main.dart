@@ -1,18 +1,22 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
-const MethodChannel _mediaChannel = MethodChannel('media_store');
+late List<CameraDescription> cameras;
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
   runApp(const MyApp());
 }
 
@@ -36,27 +40,55 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
-  final picker = ImagePicker();
-
-  bool busy = false;
-  bool includeMap = false; // reserved for future
+  late CameraController controller;
+  bool ready = false;
+  bool processing = false;
   String filter = 'none';
 
+  @override
+  void initState() {
+    super.initState();
+    controller = CameraController(
+      cameras.first,
+      ResolutionPreset.max,
+      enableAudio: false,
+    );
+    controller.initialize().then((_) {
+      if (mounted) setState(() => ready = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  Widget buildPreview() {
+    final size = MediaQuery.of(context).size;
+    final scale =
+        size.aspectRatio * controller.value.aspectRatio;
+
+    return Transform.scale(
+      scale: scale < 1 ? 1 / scale : scale,
+      child: Center(child: CameraPreview(controller)),
+    );
+  }
+
+  Future<void> playShutterSound() async {
+    await SystemSound.play(SystemSoundType.click);
+  }
+
   Future<void> capture() async {
-    if (busy) return;
-    setState(() => busy = true);
+    if (processing || !controller.value.isInitialized) return;
+
+    HapticFeedback.mediumImpact();
+    playShutterSound();
+    setState(() => processing = true);
 
     try {
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 100,
-      );
-      if (photo == null) {
-        setState(() => busy = false);
-        return;
-      }
-
-      final originalBytes = await photo.readAsBytes();
+      final XFile file = await controller.takePicture();
+      final Uint8List originalBytes = await file.readAsBytes();
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -64,7 +96,7 @@ class _CameraPageState extends State<CameraPage> {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        setState(() => busy = false);
+        setState(() => processing = false);
         return;
       }
 
@@ -72,104 +104,103 @@ class _CameraPageState extends State<CameraPage> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final placemarks = await placemarkFromCoordinates(
-        pos.latitude,
-        pos.longitude,
-      );
+      final placemarks =
+          await placemarkFromCoordinates(pos.latitude, pos.longitude);
       final p = placemarks.first;
 
-      final location = "${p.locality}, ${p.administrativeArea}, ${p.country}";
+      final location =
+          "${p.locality}, ${p.administrativeArea}, ${p.country}";
       final address = "${p.street}, ${p.subLocality}";
       final latLng =
           "Lat ${pos.latitude.toStringAsFixed(6)}, "
           "Long ${pos.longitude.toStringAsFixed(6)}";
       final dateTime = formatDateTime();
 
-      // ---- FILTERS IN ISOLATE ----
-      final cleanBytes = await compute(processImage, {
-        'bytes': originalBytes,
-        'filter': filter,
-      });
-
-      final ts = DateTime.now().millisecondsSinceEpoch;
-
-      // ---- SAVE CLEAN IMAGE IMMEDIATELY ----
-      await saveToGallery(cleanBytes, "IMG_$ts.jpg");
-
-      // UI FREE IMMEDIATELY
-      setState(() => busy = false);
-
-      // ---- BACKGROUND WATERMARK (NON-BLOCKING) ----
       unawaited(() async {
+        final processed = await compute(processImage, {
+          'bytes': originalBytes,
+          'filter': filter,
+        });
+
         final watermarked = await addWatermark(
-          imageBytes: cleanBytes,
+          imageBytes: processed,
           location: location,
           address: address,
           latLng: latLng,
           dateTime: dateTime,
         );
 
-        await saveToGallery(watermarked, "IMG_${ts}_geo.jpg");
+        await saveToGallery(watermarked);
       }());
-    } catch (_) {
-      setState(() => busy = false);
+    } finally {
+      setState(() => processing = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!ready) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // SHUTTER BUTTON
-          Center(
-            child: busy
-                ? const CircularProgressIndicator(color: Colors.white)
-                : GestureDetector(
-                    onTap: capture,
-                    child: Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                    ),
-                  ),
+          buildPreview(),
+
+          Positioned(
+            top: 48,
+            left: 0,
+            right: 0,
+            child: Text(
+              filter.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                letterSpacing: 1.4,
+              ),
+            ),
           ),
 
-          // CONTROLS
           Positioned(
-            bottom: 28,
-            left: 28,
-            right: 28,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // MAP ICON (placeholder, now responsive)
-                IconButton(
-                  icon: Icon(
-                    includeMap ? Icons.map : Icons.map_outlined,
-                    color: Colors.white,
+            bottom: 32,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: capture,
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
                   ),
-                  onPressed: () => setState(() => includeMap = !includeMap),
                 ),
+              ),
+            ),
+          ),
 
-                // FILTER ICON (CYCLE)
-                IconButton(
-                  icon: const Icon(Icons.filter_alt, color: Colors.white),
-                  onPressed: () {
-                    setState(() {
-                      filter = filter == 'none'
-                          ? 'mono'
-                          : filter == 'mono'
+          Positioned(
+            bottom: 40,
+            right: 32,
+            child: IconButton(
+              icon: const Icon(Icons.filter_alt, color: Colors.white),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  filter = filter == 'none'
+                      ? 'mono'
+                      : filter == 'mono'
                           ? 'vintage'
                           : 'none';
-                    });
-                  },
-                ),
-              ],
+                });
+              },
             ),
           ),
         ],
@@ -178,44 +209,26 @@ class _CameraPageState extends State<CameraPage> {
   }
 }
 
-//// ================= MEDIASTORE =================
-
-Future<void> saveToGallery(Uint8List bytes, String name) async {
-  await _mediaChannel.invokeMethod('saveImage', {'bytes': bytes, 'name': name});
-}
-
-//// ================= FILTERS =================
-
 Uint8List processImage(Map<String, dynamic> data) {
   final Uint8List bytes = data['bytes'];
   final String filter = data['filter'];
 
   img.Image image = img.decodeImage(bytes)!;
 
-  switch (filter) {
-    case 'mono':
-      image = img.grayscale(image);
-      break;
-
-    case 'vintage':
-      image = img.adjustColor(
-        image,
-        brightness: 0.02,
-        contrast: 1.1,
-        saturation: 0.85,
-      );
-      image = img.colorOffset(image, red: 8, green: 4, blue: -8);
-      break;
-
-    case 'none':
-    default:
-      break;
+  if (filter == 'mono') {
+    image = img.grayscale(image);
+  } else if (filter == 'vintage') {
+    image = img.adjustColor(
+      image,
+      brightness: 0.02,
+      contrast: 1.1,
+      saturation: 0.85,
+    );
+    image = img.colorOffset(image, red: 8, green: 4, blue: -8);
   }
 
-  return Uint8List.fromList(img.encodeJpg(image, quality: 100));
+  return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
-
-//// ================= WATERMARK =================
 
 Future<Uint8List> addWatermark({
   required Uint8List imageBytes,
@@ -245,75 +258,52 @@ Future<Uint8List> addWatermark({
   final bodySize = h * 0.032;
   final metaSize = h * 0.028;
 
-  final textLeft = w * 0.08;
   double y = overlayTop + overlayH * 0.18;
+  final left = w * 0.08;
 
-  _draw(
-    canvas,
-    location,
-    TextStyle(
-      color: Colors.white,
-      fontSize: titleSize,
-      fontWeight: FontWeight.w600,
-    ),
-    textLeft,
-    y,
-    w * 0.84,
-  );
+  draw(canvas, location, titleSize, FontWeight.w600, left, y, w);
   y += titleSize * 1.2;
-
-  _draw(
-    canvas,
-    address,
-    TextStyle(color: Colors.white70, fontSize: bodySize),
-    textLeft,
-    y,
-    w * 0.84,
-  );
+  draw(canvas, address, bodySize, FontWeight.normal, left, y, w);
   y += bodySize * 1.15;
-
-  _draw(
-    canvas,
-    latLng,
-    TextStyle(color: Colors.white60, fontSize: metaSize),
-    textLeft,
-    y,
-    w * 0.84,
-  );
+  draw(canvas, latLng, metaSize, FontWeight.normal, left, y, w);
   y += metaSize * 1.1;
+  draw(canvas, dateTime, metaSize, FontWeight.normal, left, y, w);
 
-  _draw(
-    canvas,
-    dateTime,
-    TextStyle(color: Colors.white60, fontSize: metaSize),
-    textLeft,
-    y,
-    w * 0.84,
-  );
-
-  final picture = recorder.endRecording();
-  final imgOut = await picture.toImage(uiImage.width, uiImage.height);
+  final pic = recorder.endRecording();
+  final imgOut = await pic.toImage(uiImage.width, uiImage.height);
   final bd = await imgOut.toByteData(format: ui.ImageByteFormat.png);
   return bd!.buffer.asUint8List();
 }
 
-void _draw(
-  Canvas canvas,
-  String text,
-  TextStyle style,
-  double x,
-  double y,
-  double maxWidth,
-) {
+void draw(Canvas canvas, String text, double size, FontWeight weight,
+    double x, double y, double w) {
   final tp = TextPainter(
-    text: TextSpan(text: text, style: style),
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: size,
+        fontWeight: weight,
+      ),
+    ),
     textDirection: TextDirection.ltr,
-  )..layout(maxWidth: maxWidth);
+  )..layout(maxWidth: w * 0.84);
 
   tp.paint(canvas, Offset(x, y));
 }
 
-//// ================= UTILS =================
+Future<void> saveToGallery(Uint8List bytes) async {
+  final dir = await getExternalStorageDirectory();
+  final folder = Directory('${dir!.path}/Pictures/GeoCam');
+  if (!folder.existsSync()) folder.createSync(recursive: true);
+
+  final ts = DateTime.now().millisecondsSinceEpoch;
+  final file = File('${folder.path}/IMG_$ts.jpg');
+  await file.writeAsBytes(bytes);
+
+  await MethodChannel('media_scanner')
+      .invokeMethod('scanFile', {'path': file.path});
+}
 
 String formatDateTime() {
   final n = DateTime.now();
