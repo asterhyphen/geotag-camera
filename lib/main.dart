@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +11,6 @@ import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 
 late List<CameraDescription> cameras;
 
@@ -64,26 +64,12 @@ class _CameraPageState extends State<CameraPage> {
     super.dispose();
   }
 
-  Widget buildPreview() {
-    final size = MediaQuery.of(context).size;
-    final scale =
-        size.aspectRatio * controller.value.aspectRatio;
-
-    return Transform.scale(
-      scale: scale < 1 ? 1 / scale : scale,
-      child: Center(child: CameraPreview(controller)),
-    );
-  }
-
-  Future<void> playShutterSound() async {
-    await SystemSound.play(SystemSoundType.click);
-  }
-
   Future<void> capture() async {
     if (processing || !controller.value.isInitialized) return;
 
     HapticFeedback.mediumImpact();
-    playShutterSound();
+    SystemSound.play(SystemSoundType.click);
+
     setState(() => processing = true);
 
     try {
@@ -148,59 +134,58 @@ class _CameraPageState extends State<CameraPage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
+      body: Column(
         children: [
-          buildPreview(),
-
-          Positioned(
-            top: 48,
-            left: 0,
-            right: 0,
-            child: Text(
-              filter.toUpperCase(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                letterSpacing: 1.4,
-              ),
-            ),
+          // 3:4 CAMERA PREVIEW
+          AspectRatio(
+            aspectRatio: 3 / 4,
+            child: CameraPreview(controller),
           ),
 
-          Positioned(
-            bottom: 32,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: GestureDetector(
-                onTap: capture,
-                child: Container(
-                  width: 84,
-                  height: 84,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
+          // CONTROLS
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    filter.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-              ),
-            ),
-          ),
 
-          Positioned(
-            bottom: 40,
-            right: 32,
-            child: IconButton(
-              icon: const Icon(Icons.filter_alt, color: Colors.white),
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  filter = filter == 'none'
-                      ? 'mono'
-                      : filter == 'mono'
-                          ? 'vintage'
-                          : 'none';
-                });
-              },
+                  GestureDetector(
+                    onTap: capture,
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border:
+                            Border.all(color: Colors.white, width: 4),
+                      ),
+                    ),
+                  ),
+
+                  IconButton(
+                    icon:
+                        const Icon(Icons.filter_alt, color: Colors.white),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        filter = filter == 'none'
+                            ? 'mono'
+                            : filter == 'mono'
+                                ? 'vintage'
+                                : 'none';
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -208,6 +193,8 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 }
+
+//// IMAGE PROCESS
 
 Uint8List processImage(Map<String, dynamic> data) {
   final Uint8List bytes = data['bytes'];
@@ -229,6 +216,8 @@ Uint8List processImage(Map<String, dynamic> data) {
 
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
 }
+
+//// WATERMARK
 
 Future<Uint8List> addWatermark({
   required Uint8List imageBytes,
@@ -292,17 +281,15 @@ void draw(Canvas canvas, String text, double size, FontWeight weight,
   tp.paint(canvas, Offset(x, y));
 }
 
+//// SAVE (FIXED)
+
+const MethodChannel _mediaChannel = MethodChannel('media_store');
+
 Future<void> saveToGallery(Uint8List bytes) async {
-  final dir = await getExternalStorageDirectory();
-  final folder = Directory('${dir!.path}/Pictures/GeoCam');
-  if (!folder.existsSync()) folder.createSync(recursive: true);
-
-  final ts = DateTime.now().millisecondsSinceEpoch;
-  final file = File('${folder.path}/IMG_$ts.jpg');
-  await file.writeAsBytes(bytes);
-
-  await MethodChannel('media_scanner')
-      .invokeMethod('scanFile', {'path': file.path});
+  await _mediaChannel.invokeMethod('saveImage', {
+    'bytes': bytes,
+    'name': 'IMG_${DateTime.now().millisecondsSinceEpoch}.jpg',
+  });
 }
 
 String formatDateTime() {
