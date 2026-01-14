@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
-
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -90,12 +87,13 @@ class _CameraPageState extends State<CameraPage> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final placemarks =
-          await placemarkFromCoordinates(pos.latitude, pos.longitude);
+      final placemarks = await placemarkFromCoordinates(
+        pos.latitude,
+        pos.longitude,
+      );
       final p = placemarks.first;
 
-      final location =
-          "${p.locality}, ${p.administrativeArea}, ${p.country}";
+      final location = "${p.locality}, ${p.administrativeArea}, ${p.country}";
       final address = "${p.street}, ${p.subLocality}";
       final latLng =
           "Lat ${pos.latitude.toStringAsFixed(6)}, "
@@ -137,10 +135,7 @@ class _CameraPageState extends State<CameraPage> {
       body: Column(
         children: [
           // 3:4 CAMERA PREVIEW
-          AspectRatio(
-            aspectRatio: 3 / 4,
-            child: CameraPreview(controller),
-          ),
+          AspectRatio(aspectRatio: 3 / 4, child: CameraPreview(controller)),
 
           // CONTROLS
           Expanded(
@@ -164,23 +159,21 @@ class _CameraPageState extends State<CameraPage> {
                       height: 76,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: Colors.white, width: 4),
+                        border: Border.all(color: Colors.white, width: 4),
                       ),
                     ),
                   ),
 
                   IconButton(
-                    icon:
-                        const Icon(Icons.filter_alt, color: Colors.white),
+                    icon: const Icon(Icons.filter_alt, color: Colors.white),
                     onPressed: () {
                       HapticFeedback.selectionClick();
                       setState(() {
                         filter = filter == 'none'
                             ? 'mono'
                             : filter == 'mono'
-                                ? 'vintage'
-                                : 'none';
+                            ? 'vintage'
+                            : 'none';
                       });
                     },
                   ),
@@ -264,16 +257,19 @@ Future<Uint8List> addWatermark({
   return bd!.buffer.asUint8List();
 }
 
-void draw(Canvas canvas, String text, double size, FontWeight weight,
-    double x, double y, double w) {
+void draw(
+  Canvas canvas,
+  String text,
+  double size,
+  FontWeight weight,
+  double x,
+  double y,
+  double w,
+) {
   final tp = TextPainter(
     text: TextSpan(
       text: text,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: size,
-        fontWeight: weight,
-      ),
+      style: TextStyle(color: Colors.white, fontSize: size, fontWeight: weight),
     ),
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: w * 0.84);
