@@ -8,6 +8,9 @@ It saves the original image as well as the watermarked image. Most geo tag apps 
 - [ ]  <span style="color:red">+</span> ` Frame ` option
 - [ ]  <span style="color:red">+</span> ` Geo-tag off ` option
 - [ ]  <span style="color:red">+</span> ` Selfie` option
+- [ ]  <span style="color:red">+</span> Volume button as shutter trigger
+- [ ]  <span style="color:red">+</span> Double tap screen to alternate selfie mode and rear camera mode
+- [ ]  <span style="color:red">+</span> Design app icon
 - [ ]  <span style="color:red">+</span> Zoom in and zoom out functionality
 - [ ]  <span style="color:red">+</span> Different aspect ratios
 - [ ]  <span style="color:red">+</span> Fix this readme file with emojis
