@@ -41,18 +41,33 @@ class _CameraPageState extends State<CameraPage> {
   bool ready = false;
   bool processing = false;
   String filter = 'none';
+  int cameraIndex = 0;
+  double zoom = 1.0;
+  double aspectRatio = 3 / 4;
+  bool whiteFrame = false;
+  bool geocamOn = true;
 
   @override
   void initState() {
     super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
     controller = CameraController(
-      cameras.first,
+      cameras[cameraIndex],
       ResolutionPreset.max,
       enableAudio: false,
     );
-    controller.initialize().then((_) {
-      if (mounted) setState(() => ready = true);
-    });
+    await controller.initialize();
+    if (mounted) setState(() => ready = true);
+  }
+
+  Future<void> _switchCamera() async {
+    setState(() => ready = false);
+    await controller.dispose();
+    cameraIndex = (cameraIndex + 1) % cameras.length;
+    await _initializeCamera();
   }
 
   @override
@@ -104,17 +119,22 @@ class _CameraPageState extends State<CameraPage> {
         final processed = await compute(processImage, {
           'bytes': originalBytes,
           'filter': filter,
+          'whiteFrame': whiteFrame,
         });
 
-        final watermarked = await addWatermark(
-          imageBytes: processed,
-          location: location,
-          address: address,
-          latLng: latLng,
-          dateTime: dateTime,
-        );
+        Uint8List finalImage = processed;
+        if (geocamOn) {
+          final watermarked = await addWatermark(
+            imageBytes: processed,
+            location: location,
+            address: address,
+            latLng: latLng,
+            dateTime: dateTime,
+          );
+          finalImage = watermarked;
+        }
 
-        await saveToGallery(watermarked);
+        await saveToGallery(finalImage);
       }());
     } finally {
       setState(() => processing = false);
@@ -134,48 +154,199 @@ class _CameraPageState extends State<CameraPage> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          // 3:4 CAMERA PREVIEW
-          AspectRatio(aspectRatio: 3 / 4, child: CameraPreview(controller)),
+          // CAMERA PREVIEW
+          AspectRatio(
+            aspectRatio: aspectRatio,
+            child: GestureDetector(
+              onDoubleTap: _switchCamera,
+              child: CameraPreview(controller),
+            ),
+          ),
 
           // CONTROLS
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    filter.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-
-                  GestureDetector(
-                    onTap: capture,
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
+                  // Top row: filter name and toggles
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            filter.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              letterSpacing: 1.5,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            cameras[cameraIndex].lensDirection ==
+                                    CameraLensDirection.front
+                                ? 'SELFIE'
+                                : 'REAR',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              whiteFrame
+                                  ? Icons.border_all
+                                  : Icons.border_clear,
+                              color: whiteFrame ? Colors.blue : Colors.white70,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => whiteFrame = !whiteFrame);
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              geocamOn ? Icons.location_on : Icons.location_off,
+                              color: geocamOn ? Colors.green : Colors.white70,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => geocamOn = !geocamOn);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
 
-                  IconButton(
-                    icon: const Icon(Icons.filter_alt, color: Colors.white),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        filter = filter == 'none'
-                            ? 'mono'
-                            : filter == 'mono'
-                            ? 'vintage'
-                            : 'none';
-                      });
-                    },
+                  // Shutter button
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: capture,
+                        child: Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                          ),
+                        ),
+                      ),
+                      if (processing)
+                        const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  // Bottom controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Camera switch
+                      IconButton(
+                        icon: const Icon(
+                          Icons.flip_camera_ios,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          _switchCamera();
+                        },
+                      ),
+
+                      // Aspect ratio
+                      PopupMenuButton<double>(
+                        icon: const Icon(
+                          Icons.aspect_ratio,
+                          color: Colors.white,
+                        ),
+                        onSelected: (value) {
+                          setState(() => aspectRatio = value);
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 1.0, child: Text('1:1')),
+                          const PopupMenuItem(value: 4 / 3, child: Text('4:3')),
+                          const PopupMenuItem(value: 3 / 4, child: Text('3:4')),
+                          const PopupMenuItem(
+                            value: 16 / 9,
+                            child: Text('16:9'),
+                          ),
+                        ],
+                      ),
+
+                      // Filter
+                      IconButton(
+                        icon: const Icon(Icons.filter_alt, color: Colors.white),
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            filter = filter == 'none'
+                                ? 'mono'
+                                : filter == 'mono'
+                                ? 'vintage'
+                                : filter == 'vintage'
+                                ? 'sepia'
+                                : filter == 'sepia'
+                                ? 'invert'
+                                : filter == 'invert'
+                                ? 'blur'
+                                : 'none';
+                          });
+                        },
+                      ),
+
+                      // Zoom
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.zoom_in,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                zoom = (zoom + 0.1).clamp(1.0, 5.0);
+                                controller.setZoomLevel(zoom);
+                              });
+                            },
+                          ),
+                          Text(
+                            '${zoom.toStringAsFixed(1)}x',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.zoom_out,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                zoom = (zoom - 0.1).clamp(1.0, 5.0);
+                                controller.setZoomLevel(zoom);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -192,19 +363,39 @@ class _CameraPageState extends State<CameraPage> {
 Uint8List processImage(Map<String, dynamic> data) {
   final Uint8List bytes = data['bytes'];
   final String filter = data['filter'];
+  final bool whiteFrame = data['whiteFrame'];
 
   img.Image image = img.decodeImage(bytes)!;
 
+  // Apply filter
   if (filter == 'mono') {
     image = img.grayscale(image);
   } else if (filter == 'vintage') {
     image = img.adjustColor(
       image,
-      brightness: 0.02,
-      contrast: 1.1,
-      saturation: 0.85,
+      brightness: 0.1,
+      contrast: 1.2,
+      saturation: 0.7,
     );
-    image = img.colorOffset(image, red: 8, green: 4, blue: -8);
+    image = img.colorOffset(image, red: 15, green: 5, blue: -10);
+    image = img.sepia(image);
+  } else if (filter == 'sepia') {
+    image = img.sepia(image);
+  } else if (filter == 'invert') {
+    image = img.invert(image);
+  } else if (filter == 'blur') {
+    image = img.gaussianBlur(image, radius: 2);
+  }
+
+  // Add white frame
+  if (whiteFrame) {
+    final frameWidth = (image.width * 0.05).toInt();
+    final newWidth = image.width + frameWidth * 2;
+    final newHeight = image.height + frameWidth * 2;
+    final framed = img.Image(width: newWidth, height: newHeight);
+    img.fill(framed, color: img.ColorRgb8(255, 255, 255));
+    img.compositeImage(framed, image, dstX: frameWidth, dstY: frameWidth);
+    image = framed;
   }
 
   return Uint8List.fromList(img.encodeJpg(image, quality: 95));
