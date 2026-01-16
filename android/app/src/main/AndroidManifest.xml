@@ -13,7 +13,7 @@
 
 
     <application
-        android:label="geocam"
+        android:label="Geo-Cam"
         android:name="${applicationName}"
         android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/ic_launcher">
