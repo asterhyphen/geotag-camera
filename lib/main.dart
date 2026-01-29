@@ -36,7 +36,9 @@ class CameraPage extends StatefulWidget {
   State<CameraPage> createState() => _CameraPageState();
 }
 
-class _CameraPageState extends State<CameraPage> {
+class _CameraPageState extends State<CameraPage>
+    with SingleTickerProviderStateMixin {
+
   late CameraController controller;
   bool ready = false;
   bool processing = false;
@@ -46,12 +48,31 @@ class _CameraPageState extends State<CameraPage> {
   double aspectRatio = 3 / 4;
   bool whiteFrame = false;
   bool geocamOn = true;
+  late AnimationController _zoomAnim;
+
 
   @override
   void initState() {
     super.initState();
+    _zoomAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 120),
+  );
     _initializeCamera();
   }
+  void _applyZoom(double target) {
+  final start = zoom;
+  final end = target.clamp(1.0, 5.0);
+
+  _zoomAnim
+    ..reset()
+    ..addListener(() {
+      zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
+      controller.setZoomLevel(zoom);
+      setState(() {});
+    })
+    ..forward();
+}
 
   Future<void> _initializeCamera() async {
     controller = CameraController(
@@ -71,10 +92,13 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _zoomTimer?.cancel();
+  _zoomAnim.dispose();
+  controller.dispose();
+  super.dispose();
+}
+
 
   Future<void> capture() async {
     if (processing || !controller.value.isInitialized) return;
@@ -140,6 +164,19 @@ class _CameraPageState extends State<CameraPage> {
       setState(() => processing = false);
     }
   }
+  Timer? _zoomTimer;
+
+void _startContinuousZoom(double delta) {
+  _zoomTimer ??= Timer.periodic(
+    const Duration(milliseconds: 80),
+    (_) => _applyZoom(zoom + delta),
+  );
+}
+
+void _stopContinuousZoom() {
+  _zoomTimer?.cancel();
+  _zoomTimer = null;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -309,43 +346,54 @@ class _CameraPageState extends State<CameraPage> {
 
                       // Zoom
                       Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.zoom_in,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                zoom = (zoom + 0.1).clamp(1.0, 5.0);
-                                controller.setZoomLevel(zoom);
-                              });
-                            },
-                          ),
-                          Text(
-                            '${zoom.toStringAsFixed(1)}x',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.zoom_out,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                zoom = (zoom - 0.1).clamp(1.0, 5.0);
-                                controller.setZoomLevel(zoom);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _applyZoom(zoom + 0.1);
+      },
+      onLongPress: () {
+        HapticFeedback.selectionClick();
+        _startContinuousZoom(0.05);
+      },
+      onLongPressUp: _stopContinuousZoom,
+      child: const Icon(
+        Icons.zoom_in,
+        color: Colors.white,
+      ),
+    ),
+
+    const SizedBox(height: 4),
+
+    Text(
+      '${zoom.toStringAsFixed(1)}x',
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 12,
+      ),
+    ),
+
+    const SizedBox(height: 4),
+
+    GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _applyZoom(zoom - 0.1);
+      },
+      onLongPress: () {
+        HapticFeedback.selectionClick();
+        _startContinuousZoom(-0.05);
+      },
+      onLongPressUp: _stopContinuousZoom,
+      child: const Icon(
+        Icons.zoom_out,
+        color: Colors.white,
+      ),
+    ),
+  ],
+)
+
                     ],
                   ),
                 ],
