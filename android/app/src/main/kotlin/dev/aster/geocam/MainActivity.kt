@@ -1,4 +1,4 @@
-package com.example.geocam
+package dev.aster.geocam
 
 import android.content.ContentValues
 import android.os.Build
