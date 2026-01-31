@@ -144,6 +144,7 @@ void dispose() {
           'bytes': originalBytes,
           'filter': filter,
           'whiteFrame': whiteFrame,
+          'aspectRatio': aspectRatio,
         });
 
         Uint8List finalImage = processed;
@@ -412,8 +413,11 @@ Uint8List processImage(Map<String, dynamic> data) {
   final Uint8List bytes = data['bytes'];
   final String filter = data['filter'];
   final bool whiteFrame = data['whiteFrame'];
+  final double aspectRatio = data['aspectRatio'];
 
   img.Image image = img.decodeImage(bytes)!;
+
+  image = cropToAspect(image, aspectRatio);
 
   // Apply filter
   if (filter == 'mono') {
@@ -538,4 +542,27 @@ String formatDateTime() {
       "${n.minute.toString().padLeft(2, '0')} "
       "GMT $s${o.inHours.abs()}:"
       "${(o.inMinutes.abs() % 60).toString().padLeft(2, '0')}";
+}
+img.Image cropToAspect(img.Image src, double ratio) {
+  final w = src.width;
+  final h = src.height;
+  final current = w / h;
+
+  if ((current - ratio).abs() < 0.01) return src;
+
+  int cw, ch, x, y;
+
+  if (current > ratio) {
+    ch = h;
+    cw = (h * ratio).round();
+    x = ((w - cw) / 2).round();
+    y = 0;
+  } else {
+    cw = w;
+    ch = (w / ratio).round();
+    x = 0;
+    y = ((h - ch) / 2).round();
+  }
+
+  return img.copyCrop(src, x: x, y: y, width: cw, height: ch);
 }
