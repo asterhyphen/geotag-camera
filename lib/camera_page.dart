@@ -320,8 +320,6 @@ void _stopContinuousZoom() {
                                 ? 'sepia'
                                 : filter == 'sepia'
                                 ? 'invert'
-                                : filter == 'invert'
-                                ? 'blur'
                                 : 'none';
                           });
                         },

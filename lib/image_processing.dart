@@ -28,9 +28,7 @@ Uint8List processImage(Map<String, dynamic> data) {
     image = img.sepia(image);
   } else if (filter == 'invert') {
     image = img.invert(image);
-  } else if (filter == 'blur') {
-    image = img.gaussianBlur(image, radius: 2);
-  }
+  } 
 
   // Add white frame
   if (whiteFrame) {
