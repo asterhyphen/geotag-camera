@@ -318,8 +318,6 @@ void _stopContinuousZoom() {
                                 ? 'vintage'
                                 : filter == 'vintage'
                                 ? 'sepia'
-                                : filter == 'sepia'
-                                ? 'invert'
                                 : 'none';
                           });
                         },

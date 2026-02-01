@@ -26,9 +26,7 @@ Uint8List processImage(Map<String, dynamic> data) {
     image = img.sepia(image);
   } else if (filter == 'sepia') {
     image = img.sepia(image);
-  } else if (filter == 'invert') {
-    image = img.invert(image);
-  } 
+  }
 
   // Add white frame
   if (whiteFrame) {
