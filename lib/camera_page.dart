@@ -17,6 +17,45 @@ class CameraPage extends StatefulWidget {
   @override
   State<CameraPage> createState() => _CameraPageState();
 }
+class _GridOverlay extends StatelessWidget {
+  final double aspectRatio;
+  const _GridOverlay({required this.aspectRatio});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: _GridPainter(),
+      ),
+    );
+  }
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.35)
+      ..strokeWidth = 1;
+
+    final thirdW = size.width / 3;
+    final thirdH = size.height / 3;
+
+    // vertical lines
+    canvas.drawLine(Offset(thirdW, 0), Offset(thirdW, size.height), paint);
+    canvas.drawLine(
+        Offset(thirdW * 2, 0), Offset(thirdW * 2, size.height), paint);
+
+    // horizontal lines
+    canvas.drawLine(Offset(0, thirdH), Offset(size.width, thirdH), paint);
+    canvas.drawLine(
+        Offset(0, thirdH * 2), Offset(size.width, thirdH * 2), paint);
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
 
 class _CameraPageState extends State<CameraPage>
     with SingleTickerProviderStateMixin {
@@ -176,12 +215,19 @@ void _stopContinuousZoom() {
         children: [
           // CAMERA PREVIEW
           AspectRatio(
-            aspectRatio: aspectRatio,
-            child: GestureDetector(
-              onDoubleTap: _switchCamera,
-              child: CameraPreview(controller),
-            ),
-          ),
+  aspectRatio: aspectRatio,
+  child: GestureDetector(
+    onDoubleTap: _switchCamera,
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        CameraPreview(controller),
+        _GridOverlay(aspectRatio: aspectRatio),
+      ],
+    ),
+  ),
+),
+
 
           // CONTROLS
           Expanded(
@@ -383,4 +429,5 @@ void _stopContinuousZoom() {
       ),
     );
   }
+  
 }
