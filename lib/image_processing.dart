@@ -16,15 +16,23 @@ Uint8List processImage(Map<String, dynamic> data) {
   if (filter == 'mono') {
     image = img.grayscale(image);
   } else if (filter == 'vintage') {
-    image = img.adjustColor(
-      image,
-      brightness: 0.1,
-      contrast: 1.2,
-      saturation: 0.7,
-    );
-    image = img.colorOffset(image, red: 15, green: 5, blue: -10);
-    image = img.sepia(image);
-  } else if (filter == 'sepia') {
+  image = img.adjustColor(
+    image,
+    brightness: 0.04,
+    contrast: 1.08,
+    saturation: 0.85,
+  );
+
+  image = img.colorOffset(
+    image,
+    red: 18,
+    green: 8,
+    blue: -6,
+  );
+
+  image = img.sepia(image, amount: 0.35);
+}
+ else if (filter == 'sepia') {
     image = img.sepia(image);
   }
 
