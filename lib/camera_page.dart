@@ -70,6 +70,9 @@ class _CameraPageState extends State<CameraPage>
   bool whiteFrame = false;
   bool geocamOn = true;
   late AnimationController _zoomAnim;
+  double minZoom = 1.0;
+  double maxZoom = 5.0;
+
 
 
   @override
@@ -83,7 +86,7 @@ class _CameraPageState extends State<CameraPage>
   }
   void _applyZoom(double target) {
   final start = zoom;
-  final end = target.clamp(1.0, 5.0);
+  final end = target.clamp(minZoom, maxZoom);
 
   _zoomAnim
     ..reset()
@@ -102,6 +105,12 @@ class _CameraPageState extends State<CameraPage>
       enableAudio: false,
     );
     await controller.initialize();
+    minZoom = await controller.getMinZoomLevel();
+    maxZoom = await controller.getMaxZoomLevel();
+
+    zoom = 1.0.clamp(minZoom, maxZoom);
+    await controller.setZoomLevel(zoom);
+
     if (mounted) setState(() => ready = true);
   }
 
