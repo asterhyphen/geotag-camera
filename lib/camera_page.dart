@@ -210,8 +210,12 @@ void dispose() {
 
 void _startContinuousZoom(double delta) {
   _zoomTimer ??= Timer.periodic(
-    const Duration(milliseconds: 80),
-    (_) => _applyZoom(zoom + delta),
+    const Duration(milliseconds: 60),
+    (_) async {
+      zoom = (zoom + delta).clamp(minZoom, maxZoom);
+      await controller.setZoomLevel(zoom);
+      if (mounted) setState(() {});
+    },
   );
 }
 
