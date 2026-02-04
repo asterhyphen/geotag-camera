@@ -249,9 +249,18 @@ void _stopContinuousZoom() {
         children: [
           // CAMERA PREVIEW
           AspectRatio(
-  aspectRatio: aspectRatio,
-  child: GestureDetector(
-    onDoubleTap: _switchCamera,
+           aspectRatio: aspectRatio,
+           child: GestureDetector(
+           onDoubleTap: _switchCamera,
+
+           onScaleUpdate: (details) {
+           final newZoom =
+             (zoom * details.scale).clamp(minZoom, maxZoom);
+
+           controller.setZoomLevel(newZoom);
+           setState(() => zoom = newZoom);
+    },
+
     child: Stack(
       fit: StackFit.expand,
       children: [
@@ -261,6 +270,7 @@ void _stopContinuousZoom() {
     ),
   ),
 ),
+
 
 
           // CONTROLS
