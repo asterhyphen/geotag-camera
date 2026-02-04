@@ -88,15 +88,26 @@ class _CameraPageState extends State<CameraPage>
   final start = zoom;
   final end = target.clamp(minZoom, maxZoom);
 
-  _zoomAnim
-    ..reset()
-    ..addListener(() {
-      zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
-      controller.setZoomLevel(zoom);
-      setState(() {});
-    })
-    ..forward();
+  _zoomAnim.stop();
+  _zoomAnim.reset();
+
+  _zoomAnim.removeListener(_zoomListener);
+
+  _zoomAnim.addListener(_zoomListenerFactory(start, end));
+  _zoomAnim.forward();
 }
+
+late VoidCallback _zoomListener;
+
+VoidCallback _zoomListenerFactory(double start, double end) {
+  _zoomListener = () {
+    zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
+    controller.setZoomLevel(zoom);
+    if (mounted) setState(() {});
+  };
+  return _zoomListener;
+}
+
 
   Future<void> _initializeCamera() async {
     controller = CameraController(
