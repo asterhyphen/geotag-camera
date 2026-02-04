@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:geocam/camera_page.dart';
 
-
 late List<CameraDescription> cameras;
 
 Future<void> main() async {

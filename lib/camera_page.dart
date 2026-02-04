@@ -17,17 +17,14 @@ class CameraPage extends StatefulWidget {
   @override
   State<CameraPage> createState() => _CameraPageState();
 }
+
 class _GridOverlay extends StatelessWidget {
   final double aspectRatio;
   const _GridOverlay({required this.aspectRatio});
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(
-        painter: _GridPainter(),
-      ),
-    );
+    return IgnorePointer(child: CustomPaint(painter: _GridPainter()));
   }
 }
 
@@ -44,22 +41,26 @@ class _GridPainter extends CustomPainter {
     // vertical lines
     canvas.drawLine(Offset(thirdW, 0), Offset(thirdW, size.height), paint);
     canvas.drawLine(
-        Offset(thirdW * 2, 0), Offset(thirdW * 2, size.height), paint);
+      Offset(thirdW * 2, 0),
+      Offset(thirdW * 2, size.height),
+      paint,
+    );
 
     // horizontal lines
     canvas.drawLine(Offset(0, thirdH), Offset(size.width, thirdH), paint);
     canvas.drawLine(
-        Offset(0, thirdH * 2), Offset(size.width, thirdH * 2), paint);
+      Offset(0, thirdH * 2),
+      Offset(size.width, thirdH * 2),
+      paint,
+    );
   }
 
   @override
   bool shouldRepaint(_) => false;
 }
 
-
 class _CameraPageState extends State<CameraPage>
     with SingleTickerProviderStateMixin {
-
   late CameraController controller;
   bool ready = false;
   bool processing = false;
@@ -73,41 +74,39 @@ class _CameraPageState extends State<CameraPage>
   double minZoom = 1.0;
   double maxZoom = 5.0;
 
-
-
   @override
   void initState() {
     super.initState();
     _zoomAnim = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 120),
-  );
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
     _initializeCamera();
   }
+
   void _applyZoom(double target) {
-  final start = zoom;
-  final end = target.clamp(minZoom, maxZoom);
+    final start = zoom;
+    final end = target.clamp(minZoom, maxZoom);
 
-  _zoomAnim.stop();
-  _zoomAnim.reset();
+    _zoomAnim.stop();
+    _zoomAnim.reset();
 
-  _zoomAnim.removeListener(_zoomListener);
+    _zoomAnim.removeListener(_zoomListener);
 
-  _zoomAnim.addListener(_zoomListenerFactory(start, end));
-  _zoomAnim.forward();
-}
+    _zoomAnim.addListener(_zoomListenerFactory(start, end));
+    _zoomAnim.forward();
+  }
 
-late VoidCallback _zoomListener;
+  late VoidCallback _zoomListener;
 
-VoidCallback _zoomListenerFactory(double start, double end) {
-  _zoomListener = () {
-    zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
-    controller.setZoomLevel(zoom);
-    if (mounted) setState(() {});
-  };
-  return _zoomListener;
-}
-
+  VoidCallback _zoomListenerFactory(double start, double end) {
+    _zoomListener = () {
+      zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
+      controller.setZoomLevel(zoom);
+      if (mounted) setState(() {});
+    };
+    return _zoomListener;
+  }
 
   Future<void> _initializeCamera() async {
     controller = CameraController(
@@ -126,30 +125,28 @@ VoidCallback _zoomListenerFactory(double start, double end) {
   }
 
   Future<void> _switchCamera() async {
-  setState(() => ready = false);
-  _zoomTimer?.cancel();
-  _zoomAnim.stop();
-  await controller.dispose();
+    setState(() => ready = false);
+    _zoomTimer?.cancel();
+    _zoomAnim.stop();
+    await controller.dispose();
 
-  cameraIndex = (cameraIndex + 1) % cameras.length;
+    cameraIndex = (cameraIndex + 1) % cameras.length;
 
-  await _initializeCamera();
+    await _initializeCamera();
 
-  zoom = 1.0.clamp(minZoom, maxZoom);
-  await controller.setZoomLevel(zoom);
+    zoom = 1.0.clamp(minZoom, maxZoom);
+    await controller.setZoomLevel(zoom);
 
-  if (mounted) setState(() {});
-}
-
+    if (mounted) setState(() {});
+  }
 
   @override
-void dispose() {
-  _zoomTimer?.cancel();
-  _zoomAnim.dispose();
-  controller.dispose();
-  super.dispose();
-}
-
+  void dispose() {
+    _zoomTimer?.cancel();
+    _zoomAnim.dispose();
+    controller.dispose();
+    super.dispose();
+  }
 
   Future<void> capture() async {
     if (processing || !controller.value.isInitialized) return;
@@ -216,23 +213,21 @@ void dispose() {
       setState(() => processing = false);
     }
   }
+
   Timer? _zoomTimer;
 
-void _startContinuousZoom(double delta) {
-  _zoomTimer ??= Timer.periodic(
-    const Duration(milliseconds: 60),
-    (_) async {
+  void _startContinuousZoom(double delta) {
+    _zoomTimer ??= Timer.periodic(const Duration(milliseconds: 60), (_) async {
       zoom = (zoom + delta).clamp(minZoom, maxZoom);
       await controller.setZoomLevel(zoom);
       if (mounted) setState(() {});
-    },
-  );
-}
+    });
+  }
 
-void _stopContinuousZoom() {
-  _zoomTimer?.cancel();
-  _zoomTimer = null;
-}
+  void _stopContinuousZoom() {
+    _zoomTimer?.cancel();
+    _zoomTimer = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,29 +244,26 @@ void _stopContinuousZoom() {
         children: [
           // CAMERA PREVIEW
           AspectRatio(
-           aspectRatio: aspectRatio,
-           child: GestureDetector(
-           onDoubleTap: _switchCamera,
+            aspectRatio: aspectRatio,
+            child: GestureDetector(
+              onDoubleTap: _switchCamera,
 
-           onScaleUpdate: (details) {
-           final newZoom =
-             (zoom * details.scale).clamp(minZoom, maxZoom);
+              onScaleUpdate: (details) {
+                final newZoom = (zoom * details.scale).clamp(minZoom, maxZoom);
 
-           controller.setZoomLevel(newZoom);
-           setState(() => zoom = newZoom);
-    },
+                controller.setZoomLevel(newZoom);
+                setState(() => zoom = newZoom);
+              },
 
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        CameraPreview(controller),
-        _GridOverlay(aspectRatio: aspectRatio),
-      ],
-    ),
-  ),
-),
-
-
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CameraPreview(controller),
+                  _GridOverlay(aspectRatio: aspectRatio),
+                ],
+              ),
+            ),
+          ),
 
           // CONTROLS
           Expanded(
@@ -415,54 +407,53 @@ void _stopContinuousZoom() {
 
                       // Zoom
                       Column(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        _applyZoom(zoom + 0.1);
-      },
-      onLongPress: () {
-        HapticFeedback.selectionClick();
-        _startContinuousZoom(0.05);
-      },
-      onLongPressUp: _stopContinuousZoom,
-      child: const Icon(
-        Icons.zoom_in,
-        color: Colors.white,
-      ),
-    ),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _applyZoom(zoom + 0.1);
+                            },
+                            onLongPress: () {
+                              HapticFeedback.selectionClick();
+                              _startContinuousZoom(0.05);
+                            },
+                            onLongPressUp: _stopContinuousZoom,
+                            child: const Icon(
+                              Icons.zoom_in,
+                              color: Colors.white,
+                            ),
+                          ),
 
-    const SizedBox(height: 4),
+                          const SizedBox(height: 4),
 
-    Text(
-      '${zoom.toStringAsFixed(1)}x',
-      style: const TextStyle(
-        color: Colors.white70,
-        fontSize: 12,
-      ),
-    ),
+                          Text(
+                            '${zoom.toStringAsFixed(1)}x',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
 
-    const SizedBox(height: 4),
+                          const SizedBox(height: 4),
 
-    GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        _applyZoom(zoom - 0.1);
-      },
-      onLongPress: () {
-        HapticFeedback.selectionClick();
-        _startContinuousZoom(-0.05);
-      },
-      onLongPressUp: _stopContinuousZoom,
-      child: const Icon(
-        Icons.zoom_out,
-        color: Colors.white,
-      ),
-    ),
-  ],
-)
-
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _applyZoom(zoom - 0.1);
+                            },
+                            onLongPress: () {
+                              HapticFeedback.selectionClick();
+                              _startContinuousZoom(-0.05);
+                            },
+                            onLongPressUp: _stopContinuousZoom,
+                            child: const Icon(
+                              Icons.zoom_out,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ],
@@ -473,5 +464,4 @@ void _stopContinuousZoom() {
       ),
     );
   }
-  
 }

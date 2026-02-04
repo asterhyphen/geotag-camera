@@ -91,6 +91,7 @@ String formatDateTime() {
       "GMT $s${o.inHours.abs()}:"
       "${(o.inMinutes.abs() % 60).toString().padLeft(2, '0')}";
 }
+
 img.Image cropToAspect(img.Image src, double ratio) {
   final w = src.width;
   final h = src.height;
