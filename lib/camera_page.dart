@@ -126,11 +126,21 @@ VoidCallback _zoomListenerFactory(double start, double end) {
   }
 
   Future<void> _switchCamera() async {
-    setState(() => ready = false);
-    await controller.dispose();
-    cameraIndex = (cameraIndex + 1) % cameras.length;
-    await _initializeCamera();
-  }
+  setState(() => ready = false);
+  _zoomTimer?.cancel();
+  _zoomAnim.stop();
+  await controller.dispose();
+
+  cameraIndex = (cameraIndex + 1) % cameras.length;
+
+  await _initializeCamera();
+
+  zoom = 1.0.clamp(minZoom, maxZoom);
+  await controller.setZoomLevel(zoom);
+
+  if (mounted) setState(() {});
+}
+
 
   @override
 void dispose() {
