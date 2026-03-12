@@ -32,7 +32,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.35)
+      ..color = Colors.white.withValues(alpha: 0.35)
       ..strokeWidth = 1;
 
     final thirdW = size.width / 3;
@@ -70,6 +70,7 @@ class _CameraPageState extends State<CameraPage>
   double aspectRatio = 3 / 4;
   bool whiteFrame = false;
   bool geocamOn = true;
+  bool autoRotate = true;
   late AnimationController _zoomAnim;
   double minZoom = 1.0;
   double maxZoom = 5.0;
@@ -122,8 +123,20 @@ class _CameraPageState extends State<CameraPage>
 
     zoom = 1.0.clamp(minZoom, maxZoom);
     await controller.setZoomLevel(zoom);
+    await _syncCaptureOrientation();
 
     if (mounted) setState(() => ready = true);
+  }
+
+  Future<void> _syncCaptureOrientation() async {
+    if (!controller.value.isInitialized) return;
+
+    if (autoRotate) {
+      await controller.unlockCaptureOrientation();
+      return;
+    }
+
+    await controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
   }
 
   Future<void> _switchCamera() async {
@@ -195,6 +208,7 @@ class _CameraPageState extends State<CameraPage>
           'filter': filter,
           'whiteFrame': whiteFrame,
           'aspectRatio': aspectRatio,
+          'autoRotate': autoRotate,
         });
 
         Uint8List finalImage = processed;
@@ -323,6 +337,24 @@ class _CameraPageState extends State<CameraPage>
                             onPressed: () {
                               HapticFeedback.selectionClick();
                               setState(() => geocamOn = !geocamOn);
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              autoRotate
+                                  ? Icons.screen_rotation
+                                  : Icons.screen_lock_rotation,
+                              color: autoRotate
+                                  ? Colors.orangeAccent
+                                  : Colors.white70,
+                            ),
+                            tooltip: autoRotate
+                                ? 'Auto rotate on'
+                                : 'Auto rotate off',
+                            onPressed: () async {
+                              HapticFeedback.selectionClick();
+                              setState(() => autoRotate = !autoRotate);
+                              await _syncCaptureOrientation();
                             },
                           ),
                         ],

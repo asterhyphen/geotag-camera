@@ -7,8 +7,13 @@ Uint8List processImage(Map<String, dynamic> data) {
   final String filter = data['filter'];
   final bool whiteFrame = data['whiteFrame'];
   final double aspectRatio = data['aspectRatio'];
+  final bool autoRotate = data['autoRotate'] ?? true;
 
   img.Image image = img.decodeImage(bytes)!;
+
+  if (autoRotate) {
+    image = img.bakeOrientation(image);
+  }
 
   image = cropToAspect(image, aspectRatio);
 
