@@ -107,6 +107,7 @@ class _CameraPageState extends State<CameraPage>
       controller.setZoomLevel(zoom);
       if (mounted) setState(() {});
     }
+
     _zoomListener = listener;
     return listener;
   }
