@@ -11,6 +11,18 @@ import 'package:geolocator/geolocator.dart';
 
 import 'main.dart';
 
+class _LocationStamp {
+  const _LocationStamp({
+    required this.location,
+    required this.address,
+    required this.latLng,
+  });
+
+  final String location;
+  final String address;
+  final String latLng;
+}
+
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
 
@@ -71,6 +83,7 @@ class _CameraPageState extends State<CameraPage>
   bool whiteFrame = false;
   bool geocamOn = true;
   bool autoRotate = true;
+  _LocationStamp? customLocation;
   late AnimationController _zoomAnim;
   double minZoom = 1.0;
   double maxZoom = 5.0;
@@ -175,32 +188,11 @@ class _CameraPageState extends State<CameraPage>
     try {
       final XFile file = await controller.takePicture();
       final Uint8List originalBytes = await file.readAsBytes();
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        setState(() => processing = false);
+      final locationStamp = await _resolveLocationStamp();
+      if (locationStamp == null) {
         return;
       }
 
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      final placemarks = await placemarkFromCoordinates(
-        pos.latitude,
-        pos.longitude,
-      );
-      final p = placemarks.first;
-
-      final location = "${p.locality}, ${p.administrativeArea}, ${p.country}";
-      final address = "${p.street}, ${p.subLocality}";
-      final latLng =
-          "Lat ${pos.latitude.toStringAsFixed(6)}, "
-          "Long ${pos.longitude.toStringAsFixed(6)}";
       final dateTime = formatDateTime();
 
       unawaited(() async {
@@ -216,9 +208,9 @@ class _CameraPageState extends State<CameraPage>
         if (geocamOn) {
           final watermarked = await addWatermark(
             imageBytes: processed,
-            location: location,
-            address: address,
-            latLng: latLng,
+            location: locationStamp.location,
+            address: locationStamp.address,
+            latLng: locationStamp.latLng,
             dateTime: dateTime,
           );
           finalImage = watermarked;
@@ -229,6 +221,220 @@ class _CameraPageState extends State<CameraPage>
     } finally {
       setState(() => processing = false);
     }
+  }
+
+  Future<_LocationStamp?> _resolveLocationStamp() async {
+    if (customLocation != null) return customLocation;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    final pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final placemarks = await placemarkFromCoordinates(
+      pos.latitude,
+      pos.longitude,
+    );
+    final p = placemarks.first;
+
+    return _LocationStamp(
+      location: "${p.locality}, ${p.administrativeArea}, ${p.country}",
+      address: "${p.street}, ${p.subLocality}",
+      latLng:
+          "Lat ${pos.latitude.toStringAsFixed(6)}, "
+          "Long ${pos.longitude.toStringAsFixed(6)}",
+    );
+  }
+
+  Future<void> _openLocationPicker() async {
+    final locationController = TextEditingController(
+      text: customLocation?.location ?? '',
+    );
+    final addressController = TextEditingController(
+      text: customLocation?.address ?? '',
+    );
+    final latController = TextEditingController(
+      text: _extractCoordinate(customLocation?.latLng, 'Lat'),
+    );
+    final lngController = TextEditingController(
+      text: _extractCoordinate(customLocation?.latLng, 'Long'),
+    );
+
+    try {
+      final pickedLocation = await showDialog<_LocationStamp?>(
+        context: context,
+        builder: (context) {
+          String? errorText;
+
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return AlertDialog(
+                backgroundColor: const Color(0xFF111111),
+                title: const Text(
+                  'Pick Location',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: locationController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _pickerFieldDecoration(
+                          label: 'Location',
+                          hint: 'City, State, Country',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: addressController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _pickerFieldDecoration(
+                          label: 'Address',
+                          hint: 'Street, area',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: latController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          signed: true,
+                          decimal: true,
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _pickerFieldDecoration(
+                          label: 'Latitude',
+                          hint: '12.345678',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: lngController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          signed: true,
+                          decimal: true,
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _pickerFieldDecoration(
+                          label: 'Longitude',
+                          hint: '77.123456',
+                        ),
+                      ),
+                      if (errorText != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          errorText!,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(
+                      const _LocationStamp(
+                        location: '',
+                        address: '',
+                        latLng: '',
+                      ),
+                    ),
+                    child: const Text('Use GPS'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      final location = locationController.text.trim();
+                      final address = addressController.text.trim();
+                      final latitude = double.tryParse(latController.text.trim());
+                      final longitude =
+                          double.tryParse(lngController.text.trim());
+
+                      if (location.isEmpty ||
+                          address.isEmpty ||
+                          latitude == null ||
+                          longitude == null) {
+                        setModalState(() {
+                          errorText =
+                              'Enter a location, address, latitude, and longitude.';
+                        });
+                        return;
+                      }
+
+                      Navigator.of(context).pop(
+                        _LocationStamp(
+                          location: location,
+                          address: address,
+                          latLng:
+                              "Lat ${latitude.toStringAsFixed(6)}, "
+                              "Long ${longitude.toStringAsFixed(6)}",
+                        ),
+                      );
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (!mounted || pickedLocation == null) return;
+
+      HapticFeedback.selectionClick();
+      setState(() {
+        customLocation = pickedLocation.location.isEmpty ? null : pickedLocation;
+      });
+    } finally {
+      locationController.dispose();
+      addressController.dispose();
+      latController.dispose();
+      lngController.dispose();
+    }
+  }
+
+  InputDecoration _pickerFieldDecoration({
+    required String label,
+    required String hint,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white38),
+      labelStyle: const TextStyle(color: Colors.white70),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.white24),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.blueAccent),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  String _extractCoordinate(String? latLng, String prefix) {
+    if (latLng == null || latLng.isEmpty) return '';
+    final parts = latLng.split(', ');
+    for (final part in parts) {
+      if (part.startsWith('$prefix ')) {
+        return part.substring(prefix.length + 1);
+      }
+    }
+    return '';
   }
 
   Timer? _zoomTimer;
@@ -314,6 +520,16 @@ class _CameraPageState extends State<CameraPage>
                               fontSize: 12,
                             ),
                           ),
+                          Text(
+                            customLocation == null ? 'GPS' : 'CUSTOM LOCATION',
+                            style: TextStyle(
+                              color: customLocation == null
+                                  ? Colors.white38
+                                  : Colors.orangeAccent,
+                              fontSize: 11,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
@@ -339,6 +555,20 @@ class _CameraPageState extends State<CameraPage>
                               HapticFeedback.selectionClick();
                               setState(() => geocamOn = !geocamOn);
                             },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              customLocation == null
+                                  ? Icons.edit_location_alt
+                                  : Icons.place,
+                              color: customLocation == null
+                                  ? Colors.white70
+                                  : Colors.orangeAccent,
+                            ),
+                            tooltip: customLocation == null
+                                ? 'Pick location'
+                                : 'Edit custom location',
+                            onPressed: _openLocationPicker,
                           ),
                           IconButton(
                             icon: Icon(
