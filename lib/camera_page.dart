@@ -89,6 +89,7 @@ class _CameraPageState extends State<CameraPage>
   late AnimationController _zoomAnim;
   double minZoom = 1.0;
   double maxZoom = 5.0;
+  double _pinchStartZoom = 1.0;
 
   @override
   void initState() {
@@ -535,9 +536,16 @@ class _CameraPageState extends State<CameraPage>
             aspectRatio: aspectRatio,
             child: GestureDetector(
               onDoubleTap: _switchCamera,
+              onScaleStart: (_) {
+                _pinchStartZoom = zoom;
+              },
 
               onScaleUpdate: (details) {
-                final newZoom = (zoom * details.scale).clamp(minZoom, maxZoom);
+                final adjustedScale = 1 + ((details.scale - 1) * 0.3);
+                final newZoom = (_pinchStartZoom * adjustedScale).clamp(
+                  minZoom,
+                  maxZoom,
+                );
 
                 controller.setZoomLevel(newZoom);
                 setState(() => zoom = newZoom);
