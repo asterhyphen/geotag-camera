@@ -83,6 +83,8 @@ class _CameraPageState extends State<CameraPage>
   bool whiteFrame = false;
   bool geocamOn = true;
   bool autoRotate = true;
+  bool torchOn = false;
+  bool torchSupported = true;
   _LocationStamp? customLocation;
   late AnimationController _zoomAnim;
   double minZoom = 1.0;
@@ -138,6 +140,7 @@ class _CameraPageState extends State<CameraPage>
     zoom = 1.0.clamp(minZoom, maxZoom);
     await controller.setZoomLevel(zoom);
     await _syncCaptureOrientation();
+    await _syncTorchState();
 
     if (mounted) setState(() => ready = true);
   }
@@ -167,6 +170,68 @@ class _CameraPageState extends State<CameraPage>
     await controller.setZoomLevel(zoom);
 
     if (mounted) setState(() {});
+  }
+
+  Future<void> _syncTorchState() async {
+    if (!controller.value.isInitialized) return;
+
+    final wantsTorch =
+        torchOn &&
+        cameras[cameraIndex].lensDirection == CameraLensDirection.back;
+
+    try {
+      await controller.setFlashMode(
+        wantsTorch ? FlashMode.torch : FlashMode.off,
+      );
+      torchSupported = true;
+      if (!wantsTorch && torchOn) {
+        torchOn = false;
+      }
+    } on CameraException {
+      torchSupported = false;
+      torchOn = false;
+    }
+  }
+
+  Future<void> _toggleTorch() async {
+    if (!controller.value.isInitialized) return;
+
+    final isRearCamera =
+        cameras[cameraIndex].lensDirection == CameraLensDirection.back;
+    if (!isRearCamera) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Flashlight is only available on the rear camera.'),
+        ),
+      );
+      return;
+    }
+
+    final nextTorchState = !torchOn;
+
+    try {
+      await controller.setFlashMode(
+        nextTorchState ? FlashMode.torch : FlashMode.off,
+      );
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() {
+        torchOn = nextTorchState;
+        torchSupported = true;
+      });
+    } on CameraException {
+      if (!mounted) return;
+      setState(() {
+        torchOn = false;
+        torchSupported = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This camera does not support flashlight control.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -530,10 +595,30 @@ class _CameraPageState extends State<CameraPage>
                               letterSpacing: 0.8,
                             ),
                           ),
+                          Text(
+                            torchOn ? 'FLASHLIGHT ON' : 'FLASHLIGHT OFF',
+                            style: TextStyle(
+                              color: torchOn ? Colors.amberAccent : Colors.white24,
+                              fontSize: 11,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
                         children: [
+                          IconButton(
+                            icon: Icon(
+                              torchOn ? Icons.flashlight_on : Icons.flashlight_off,
+                              color: torchOn
+                                  ? Colors.amberAccent
+                                  : torchSupported
+                                  ? Colors.white70
+                                  : Colors.white24,
+                            ),
+                            tooltip: torchOn ? 'Turn flashlight off' : 'Turn flashlight on',
+                            onPressed: _toggleTorch,
+                          ),
                           IconButton(
                             icon: Icon(
                               whiteFrame
