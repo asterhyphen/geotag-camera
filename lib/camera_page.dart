@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:ui' as ui;
-import 'services.dart';
-import 'image_processing.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'cute_widgets.dart';
+import 'image_processing.dart';
 import 'main.dart';
+import 'pastel_theme.dart';
+import 'services.dart';
 
 class _LocationStamp {
   const _LocationStamp({
@@ -30,27 +32,30 @@ class CameraPage extends StatefulWidget {
   State<CameraPage> createState() => _CameraPageState();
 }
 
-class _GridOverlay extends StatelessWidget {
-  final double aspectRatio;
-  const _GridOverlay({required this.aspectRatio});
+class _CuteGridOverlay extends StatelessWidget {
+  const _CuteGridOverlay();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(child: CustomPaint(painter: _GridPainter()));
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: _CuteGridPainter(),
+      ),
+    );
   }
 }
 
-class _GridPainter extends CustomPainter {
+class _CuteGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
-      ..strokeWidth = 1;
+      ..color = PastelColors.lavender.withValues(alpha: 0.35)
+      ..strokeWidth = 1.0;
 
     final thirdW = size.width / 3;
     final thirdH = size.height / 3;
 
-    // vertical lines
+    // Vertical lines
     canvas.drawLine(Offset(thirdW, 0), Offset(thirdW, size.height), paint);
     canvas.drawLine(
       Offset(thirdW * 2, 0),
@@ -58,7 +63,7 @@ class _GridPainter extends CustomPainter {
       paint,
     );
 
-    // horizontal lines
+    // Horizontal lines
     canvas.drawLine(Offset(0, thirdH), Offset(size.width, thirdH), paint);
     canvas.drawLine(
       Offset(0, thirdH * 2),
@@ -72,7 +77,7 @@ class _GridPainter extends CustomPainter {
 }
 
 class _CameraPageState extends State<CameraPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late CameraController controller;
   bool ready = false;
   bool processing = false;
@@ -85,11 +90,16 @@ class _CameraPageState extends State<CameraPage>
   bool autoRotate = true;
   bool torchOn = false;
   bool torchSupported = true;
+  bool showGrid = true;
   _LocationStamp? customLocation;
+
   late AnimationController _zoomAnim;
+  late AnimationController _flashAnim;
   double minZoom = 1.0;
   double maxZoom = 5.0;
   double _pinchStartZoom = 1.0;
+  Timer? _zoomTimer;
+  VoidCallback? _zoomListener;
 
   @override
   void initState() {
@@ -98,34 +108,20 @@ class _CameraPageState extends State<CameraPage>
       vsync: this,
       duration: const Duration(milliseconds: 120),
     );
+    _flashAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
     _initializeCamera();
   }
 
-  void _applyZoom(double target) {
-    final start = zoom;
-    final end = target.clamp(minZoom, maxZoom);
-
-    _zoomAnim.stop();
-    _zoomAnim.reset();
-    if (_zoomListener != null) {
-      _zoomAnim.removeListener(_zoomListener!);
-    }
-
-    _zoomAnim.addListener(_zoomListenerFactory(start, end));
-    _zoomAnim.forward();
-  }
-
-  VoidCallback? _zoomListener;
-
-  VoidCallback _zoomListenerFactory(double start, double end) {
-    void listener() {
-      zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
-      controller.setZoomLevel(zoom);
-      if (mounted) setState(() {});
-    }
-
-    _zoomListener = listener;
-    return listener;
+  @override
+  void dispose() {
+    _zoomTimer?.cancel();
+    _zoomAnim.dispose();
+    _flashAnim.dispose();
+    controller.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeCamera() async {
@@ -146,6 +142,44 @@ class _CameraPageState extends State<CameraPage>
     if (mounted) setState(() => ready = true);
   }
 
+  void _applyZoom(double target) {
+    final start = zoom;
+    final end = target.clamp(minZoom, maxZoom);
+
+    _zoomAnim.stop();
+    _zoomAnim.reset();
+    if (_zoomListener != null) {
+      _zoomAnim.removeListener(_zoomListener!);
+    }
+
+    _zoomAnim.addListener(_zoomListenerFactory(start, end));
+    _zoomAnim.forward();
+  }
+
+  VoidCallback _zoomListenerFactory(double start, double end) {
+    void listener() {
+      zoom = ui.lerpDouble(start, end, _zoomAnim.value)!;
+      controller.setZoomLevel(zoom);
+      if (mounted) setState(() {});
+    }
+
+    _zoomListener = listener;
+    return listener;
+  }
+
+  void _startContinuousZoom(double delta) {
+    _zoomTimer ??= Timer.periodic(const Duration(milliseconds: 60), (_) async {
+      zoom = (zoom + delta).clamp(minZoom, maxZoom);
+      await controller.setZoomLevel(zoom);
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _stopContinuousZoom() {
+    _zoomTimer?.cancel();
+    _zoomTimer = null;
+  }
+
   Future<void> _syncCaptureOrientation() async {
     if (!controller.value.isInitialized) return;
 
@@ -158,6 +192,7 @@ class _CameraPageState extends State<CameraPage>
   }
 
   Future<void> _switchCamera() async {
+    HapticFeedback.mediumImpact();
     setState(() => ready = false);
     _zoomTimer?.cancel();
     _zoomAnim.stop();
@@ -201,11 +236,7 @@ class _CameraPageState extends State<CameraPage>
         cameras[cameraIndex].lensDirection == CameraLensDirection.back;
     if (!isRearCamera) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Flashlight is only available on the rear camera.'),
-        ),
-      );
+      _showCuteSnackBar('Flashlight is only available on the rear camera 🌟');
       return;
     }
 
@@ -227,20 +258,31 @@ class _CameraPageState extends State<CameraPage>
         torchOn = false;
         torchSupported = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This camera does not support flashlight control.'),
-        ),
-      );
+      _showCuteSnackBar('This camera does not support flashlight control 💡');
     }
   }
 
-  @override
-  void dispose() {
-    _zoomTimer?.cancel();
-    _zoomAnim.dispose();
-    controller.dispose();
-    super.dispose();
+  void _showCuteSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: PastelColors.surfaceDark.withValues(alpha: 0.95),
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: PastelColors.pink, width: 1.2),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: PastelColors.textLight,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> capture() async {
@@ -248,6 +290,9 @@ class _CameraPageState extends State<CameraPage>
 
     HapticFeedback.mediumImpact();
     SystemSound.play(SystemSoundType.click);
+
+    // Trigger visual capture flash
+    _flashAnim.forward(from: 0.0).then((_) => _flashAnim.reverse());
 
     setState(() => processing = true);
 
@@ -285,7 +330,9 @@ class _CameraPageState extends State<CameraPage>
         await saveToGallery(finalImage);
       }());
     } finally {
-      setState(() => processing = false);
+      if (mounted) {
+        setState(() => processing = false);
+      }
     }
   }
 
@@ -342,116 +389,214 @@ class _CameraPageState extends State<CameraPage>
 
           return StatefulBuilder(
             builder: (context, setModalState) {
-              return AlertDialog(
-                backgroundColor: const Color(0xFF111111),
-                title: const Text(
-                  'Pick Location',
-                  style: TextStyle(color: Colors.white),
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: locationController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _pickerFieldDecoration(
-                          label: 'Location',
-                          hint: 'City, State, Country',
+              return Dialog(
+                backgroundColor: Colors.transparent,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: PastelColors.surfaceDark,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: PastelColors.pink.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
+                    boxShadow: PastelShadows.soft(
+                      color: PastelColors.pink.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Cute Header
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: PastelColors.pink.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.place_rounded,
+                                color: PastelColors.pink,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Location Tag',
+                              style: TextStyle(
+                                color: PastelColors.textLight,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: addressController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _pickerFieldDecoration(
-                          label: 'Address',
-                          hint: 'Street, area',
+                        const SizedBox(height: 18),
+
+                        _buildCuteTextField(
+                          controller: locationController,
+                          label: 'City & Region',
+                          hint: 'Tokyo, Japan',
+                          icon: Icons.location_city_rounded,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: latController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          signed: true,
-                          decimal: true,
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _pickerFieldDecoration(
-                          label: 'Latitude',
-                          hint: '12.345678',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: lngController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          signed: true,
-                          decimal: true,
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _pickerFieldDecoration(
-                          label: 'Longitude',
-                          hint: '77.123456',
-                        ),
-                      ),
-                      if (errorText != null) ...[
                         const SizedBox(height: 12),
-                        Text(
-                          errorText!,
-                          style: const TextStyle(color: Colors.redAccent),
+
+                        _buildCuteTextField(
+                          controller: addressController,
+                          label: 'Address / Landmark',
+                          hint: 'Shibuya Crossing',
+                          icon: Icons.map_rounded,
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCuteTextField(
+                                controller: latController,
+                                label: 'Latitude',
+                                hint: '35.6595',
+                                isNumeric: true,
+                                icon: Icons.explore_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildCuteTextField(
+                                controller: lngController,
+                                label: 'Longitude',
+                                hint: '139.7004',
+                                isNumeric: true,
+                                icon: Icons.compass_calibration_rounded,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (errorText != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            errorText!,
+                            style: const TextStyle(
+                              color: PastelColors.pinkDeep,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
+                        const SizedBox(height: 20),
+
+                        // Action Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => Navigator.of(context).pop(
+                                const _LocationStamp(
+                                  location: '',
+                                  address: '',
+                                  latLng: '',
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.gps_fixed_rounded,
+                                size: 16,
+                                color: PastelColors.mint,
+                              ),
+                              label: const Text(
+                                'Use GPS',
+                                style: TextStyle(
+                                  color: PastelColors.mint,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: PastelColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                BouncyTap(
+                                  onTap: () {
+                                    final location =
+                                        locationController.text.trim();
+                                    final address =
+                                        addressController.text.trim();
+                                    final latitude = double.tryParse(
+                                      latController.text.trim(),
+                                    );
+                                    final longitude = double.tryParse(
+                                      lngController.text.trim(),
+                                    );
+
+                                    if (location.isEmpty ||
+                                        address.isEmpty ||
+                                        latitude == null ||
+                                        longitude == null) {
+                                      setModalState(() {
+                                        errorText =
+                                            'Please fill all fields with valid coordinates!';
+                                      });
+                                      return;
+                                    }
+
+                                    Navigator.of(context).pop(
+                                      _LocationStamp(
+                                        location: location,
+                                        address: address,
+                                        latLng:
+                                            "Lat ${latitude.toStringAsFixed(6)}, "
+                                            "Long ${longitude.toStringAsFixed(6)}",
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: PastelColors.magicGradient,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: PastelColors.pink
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Text(
+                                      'Save Tag ✨',
+                                      style: TextStyle(
+                                        color: PastelColors.textDark,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(
-                      const _LocationStamp(
-                        location: '',
-                        address: '',
-                        latLng: '',
-                      ),
-                    ),
-                    child: const Text('Use GPS'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      final location = locationController.text.trim();
-                      final address = addressController.text.trim();
-                      final latitude = double.tryParse(latController.text.trim());
-                      final longitude =
-                          double.tryParse(lngController.text.trim());
-
-                      if (location.isEmpty ||
-                          address.isEmpty ||
-                          latitude == null ||
-                          longitude == null) {
-                        setModalState(() {
-                          errorText =
-                              'Enter a location, address, latitude, and longitude.';
-                        });
-                        return;
-                      }
-
-                      Navigator.of(context).pop(
-                        _LocationStamp(
-                          location: location,
-                          address: address,
-                          latLng:
-                              "Lat ${latitude.toStringAsFixed(6)}, "
-                              "Long ${longitude.toStringAsFixed(6)}",
-                        ),
-                      );
-                    },
-                    child: const Text('Save'),
-                  ),
-                ],
               );
             },
           );
@@ -462,7 +607,8 @@ class _CameraPageState extends State<CameraPage>
 
       HapticFeedback.selectionClick();
       setState(() {
-        customLocation = pickedLocation.location.isEmpty ? null : pickedLocation;
+        customLocation =
+            pickedLocation.location.isEmpty ? null : pickedLocation;
       });
     } finally {
       locationController.dispose();
@@ -472,22 +618,58 @@ class _CameraPageState extends State<CameraPage>
     }
   }
 
-  InputDecoration _pickerFieldDecoration({
+  Widget _buildCuteTextField({
+    required TextEditingController controller,
     required String label,
     required String hint,
+    IconData? icon,
+    bool isNumeric = false,
   }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white38),
-      labelStyle: const TextStyle(color: Colors.white70),
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.white24),
-        borderRadius: BorderRadius.circular(12),
+    return TextField(
+      controller: controller,
+      keyboardType: isNumeric
+          ? const TextInputType.numberWithOptions(
+              signed: true,
+              decimal: true,
+            )
+          : TextInputType.text,
+      style: const TextStyle(
+        color: PastelColors.textLight,
+        fontSize: 13,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.blueAccent),
-        borderRadius: BorderRadius.circular(12),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: icon != null
+            ? Icon(icon, color: PastelColors.lavender, size: 18)
+            : null,
+        filled: true,
+        fillColor: PastelColors.cardDark.withValues(alpha: 0.8),
+        hintStyle: const TextStyle(
+          color: PastelColors.textMuted,
+          fontSize: 12,
+        ),
+        labelStyle: const TextStyle(
+          color: PastelColors.lavender,
+          fontSize: 12,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: PastelColors.lavender.withValues(alpha: 0.25),
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(
+            color: PastelColors.pink,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
     );
   }
@@ -503,322 +685,491 @@ class _CameraPageState extends State<CameraPage>
     return '';
   }
 
-  Timer? _zoomTimer;
+  void _showAspectRatioSheet() {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final ratios = [
+          {'label': '3:4', 'sub': 'Portrait', 'ratio': 3 / 4, 'icon': Icons.crop_portrait_rounded},
+          {'label': '1:1', 'sub': 'Square', 'ratio': 1.0, 'icon': Icons.crop_square_rounded},
+          {'label': '4:3', 'sub': 'Classic', 'ratio': 4 / 3, 'icon': Icons.crop_landscape_rounded},
+          {'label': '16:9', 'sub': 'Wide', 'ratio': 16 / 9, 'icon': Icons.crop_16_9_rounded},
+        ];
 
-  void _startContinuousZoom(double delta) {
-    _zoomTimer ??= Timer.periodic(const Duration(milliseconds: 60), (_) async {
-      zoom = (zoom + delta).clamp(minZoom, maxZoom);
-      await controller.setZoomLevel(zoom);
-      if (mounted) setState(() {});
-    });
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: PastelColors.surfaceDark,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border.all(
+              color: PastelColors.lavender.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: PastelColors.lavender.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Aspect Ratio 📐',
+                style: TextStyle(
+                  color: PastelColors.textLight,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: ratios.map((item) {
+                  final double r = item['ratio'] as double;
+                  final isSelected = (aspectRatio - r).abs() < 0.05;
+
+                  return BouncyTap(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => aspectRatio = r);
+                      Navigator.pop(context);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? PastelColors.pink.withValues(alpha: 0.25)
+                            : PastelColors.cardDark.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? PastelColors.pink
+                              : PastelColors.lavender.withValues(alpha: 0.2),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            item['icon'] as IconData,
+                            color: isSelected
+                                ? PastelColors.pink
+                                : PastelColors.textMuted,
+                            size: 26,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item['label'] as String,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? PastelColors.pink
+                                  : PastelColors.textLight,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            item['sub'] as String,
+                            style: const TextStyle(
+                              color: PastelColors.textMuted,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
-  void _stopContinuousZoom() {
-    _zoomTimer?.cancel();
-    _zoomTimer = null;
+  String _getAspectRatioLabel() {
+    if ((aspectRatio - 1.0).abs() < 0.05) return '1:1';
+    if ((aspectRatio - (4 / 3)).abs() < 0.05) return '4:3';
+    if ((aspectRatio - (3 / 4)).abs() < 0.05) return '3:4';
+    if ((aspectRatio - (16 / 9)).abs() < 0.05) return '16:9';
+    return '3:4';
   }
 
   @override
   Widget build(BuildContext context) {
     if (!ready) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: PastelColors.bgDark,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: PastelColors.magicGradient,
+                  boxShadow: PastelShadows.glow(PastelColors.pink),
+                ),
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    PastelColors.textDark,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Starting Geocam... ✨',
+                style: TextStyle(
+                  color: PastelColors.textLight,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
+    final isFrontCamera =
+        cameras[cameraIndex].lensDirection == CameraLensDirection.front;
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          // CAMERA PREVIEW
-          AspectRatio(
-            aspectRatio: aspectRatio,
-            child: GestureDetector(
-              onDoubleTap: _switchCamera,
-              onScaleStart: (_) {
-                _pinchStartZoom = zoom;
-              },
+      backgroundColor: PastelColors.bgDark,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 🌸 TOP FLOATING CONTROL ISLAND
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: PastelColors.surfaceDark.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: PastelColors.lavender.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
+                  boxShadow: PastelShadows.soft(),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Flashlight
+                    CuteIconButton(
+                      icon: torchOn
+                          ? Icons.flashlight_on_rounded
+                          : Icons.flashlight_off_rounded,
+                      isActive: torchOn,
+                      activeColor: PastelColors.butter,
+                      tooltip: torchOn ? 'Flashlight On' : 'Flashlight Off',
+                      onPressed: _toggleTorch,
+                    ),
 
-              onScaleUpdate: (details) {
-                final adjustedScale = 1 + ((details.scale - 1) * 0.3);
-                final newZoom = (_pinchStartZoom * adjustedScale).clamp(
-                  minZoom,
-                  maxZoom,
-                );
+                    // Grid Toggle
+                    CuteIconButton(
+                      icon: showGrid
+                          ? Icons.grid_on_rounded
+                          : Icons.grid_off_rounded,
+                      isActive: showGrid,
+                      activeColor: PastelColors.sky,
+                      tooltip: showGrid ? 'Grid On' : 'Grid Off',
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => showGrid = !showGrid);
+                      },
+                    ),
 
-                controller.setZoomLevel(newZoom);
-                setState(() => zoom = newZoom);
-              },
+                    // White Frame
+                    CuteIconButton(
+                      icon: whiteFrame
+                          ? Icons.crop_square_rounded
+                          : Icons.filter_frames_outlined,
+                      isActive: whiteFrame,
+                      activeColor: PastelColors.pink,
+                      tooltip: whiteFrame ? 'White Frame On' : 'White Frame Off',
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => whiteFrame = !whiteFrame);
+                      },
+                    ),
 
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CameraPreview(controller),
-                  _GridOverlay(aspectRatio: aspectRatio),
-                ],
+                    // Geotag Watermark
+                    CuteIconButton(
+                      icon: geocamOn
+                          ? Icons.location_on_rounded
+                          : Icons.location_off_rounded,
+                      isActive: geocamOn,
+                      activeColor: PastelColors.mint,
+                      tooltip: geocamOn ? 'Geotag On' : 'Geotag Off',
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => geocamOn = !geocamOn);
+                      },
+                    ),
+
+                    // Auto Rotate
+                    CuteIconButton(
+                      icon: autoRotate
+                          ? Icons.screen_rotation_rounded
+                          : Icons.screen_lock_rotation_rounded,
+                      isActive: autoRotate,
+                      activeColor: PastelColors.peach,
+                      tooltip: autoRotate ? 'Auto Rotate On' : 'Locked Upright',
+                      onPressed: () async {
+                        HapticFeedback.selectionClick();
+                        setState(() => autoRotate = !autoRotate);
+                        await _syncCaptureOrientation();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // CONTROLS
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              child: Column(
+            // 📍 STATUS RIBBON (Location & Lens Info)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Top row: filter name and toggles
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            filter.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              letterSpacing: 1.5,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            cameras[cameraIndex].lensDirection ==
-                                    CameraLensDirection.front
-                                ? 'SELFIE'
-                                : 'REAR',
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            customLocation == null ? 'GPS' : 'CUSTOM LOCATION',
-                            style: TextStyle(
-                              color: customLocation == null
-                                  ? Colors.white38
-                                  : Colors.orangeAccent,
-                              fontSize: 11,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          Text(
-                            torchOn ? 'FLASHLIGHT ON' : 'FLASHLIGHT OFF',
-                            style: TextStyle(
-                              color: torchOn ? Colors.amberAccent : Colors.white24,
-                              fontSize: 11,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              torchOn ? Icons.flashlight_on : Icons.flashlight_off,
-                              color: torchOn
-                                  ? Colors.amberAccent
-                                  : torchSupported
-                                  ? Colors.white70
-                                  : Colors.white24,
-                            ),
-                            tooltip: torchOn ? 'Turn flashlight off' : 'Turn flashlight on',
-                            onPressed: _toggleTorch,
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              whiteFrame
-                                  ? Icons.border_all
-                                  : Icons.border_clear,
-                              color: whiteFrame ? Colors.blue : Colors.white70,
-                            ),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              setState(() => whiteFrame = !whiteFrame);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              geocamOn ? Icons.location_on : Icons.location_off,
-                              color: geocamOn ? Colors.green : Colors.white70,
-                            ),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              setState(() => geocamOn = !geocamOn);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              customLocation == null
-                                  ? Icons.edit_location_alt
-                                  : Icons.place,
-                              color: customLocation == null
-                                  ? Colors.white70
-                                  : Colors.orangeAccent,
-                            ),
-                            tooltip: customLocation == null
-                                ? 'Pick location'
-                                : 'Edit custom location',
-                            onPressed: _openLocationPicker,
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              autoRotate
-                                  ? Icons.screen_rotation
-                                  : Icons.screen_lock_rotation,
-                              color: autoRotate
-                                  ? Colors.orangeAccent
-                                  : Colors.white70,
-                            ),
-                            tooltip: autoRotate
-                                ? 'Auto rotate on'
-                                : 'Auto rotate off',
-                            onPressed: () async {
-                              HapticFeedback.selectionClick();
-                              setState(() => autoRotate = !autoRotate);
-                              await _syncCaptureOrientation();
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                  // Location Status Pill (Tap to edit custom location)
+                  Flexible(
+                    child: CuteBadge(
+                      icon: customLocation == null
+                          ? Icons.gps_fixed_rounded
+                          : Icons.edit_location_alt_rounded,
+                      label: customLocation == null
+                          ? 'GPS Auto'
+                          : '📍 ${customLocation!.location}',
+                      color: customLocation == null
+                          ? PastelColors.mint
+                          : PastelColors.peachDeep,
+                      onTap: _openLocationPicker,
+                    ),
                   ),
 
-                  // Shutter button
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: capture,
-                        child: Container(
-                          width: 76,
-                          height: 76,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                          ),
-                        ),
-                      ),
-                      if (processing)
-                        const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                    ],
-                  ),
+                  const SizedBox(width: 8),
 
-                  // Bottom controls
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Camera switch
-                      IconButton(
-                        icon: const Icon(
-                          Icons.flip_camera_ios,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          _switchCamera();
-                        },
+                      // Selfie / Rear Badge
+                      CuteBadge(
+                        icon: isFrontCamera
+                            ? Icons.face_retouching_natural_rounded
+                            : Icons.camera_rear_rounded,
+                        label: isFrontCamera ? 'Selfie' : 'Rear',
+                        color: PastelColors.lavender,
                       ),
-
-                      // Aspect ratio
-                      PopupMenuButton<double>(
-                        icon: const Icon(
-                          Icons.aspect_ratio,
-                          color: Colors.white,
-                        ),
-                        onSelected: (value) {
-                          setState(() => aspectRatio = value);
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(value: 1.0, child: Text('1:1')),
-                          const PopupMenuItem(value: 4 / 3, child: Text('4:3')),
-                          const PopupMenuItem(value: 3 / 4, child: Text('3:4')),
-                          const PopupMenuItem(
-                            value: 16 / 9,
-                            child: Text('16:9'),
-                          ),
-                        ],
-                      ),
-
-                      // Filter
-                      IconButton(
-                        icon: const Icon(Icons.filter_alt, color: Colors.white),
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            filter = filter == 'none'
-                                ? 'mono'
-                                : filter == 'mono'
-                                ? 'vintage'
-                                : filter == 'vintage'
-                                ? 'sepia'
-                                : 'none';
-                          });
-                        },
-                      ),
-
-                      // Zoom
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              _applyZoom(zoom + 0.1);
-                            },
-                            onLongPress: () {
-                              HapticFeedback.selectionClick();
-                              _startContinuousZoom(0.05);
-                            },
-                            onLongPressUp: _stopContinuousZoom,
-                            child: const Icon(
-                              Icons.zoom_in,
-                              color: Colors.white,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          Text(
-                            '${zoom.toStringAsFixed(1)}x',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              _applyZoom(zoom - 0.1);
-                            },
-                            onLongPress: () {
-                              HapticFeedback.selectionClick();
-                              _startContinuousZoom(-0.05);
-                            },
-                            onLongPressUp: _stopContinuousZoom,
-                            child: const Icon(
-                              Icons.zoom_out,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      // Ratio Badge
+                      CuteBadge(
+                        icon: Icons.aspect_ratio_rounded,
+                        label: _getAspectRatioLabel(),
+                        color: PastelColors.sky,
+                        onTap: _showAspectRatioSheet,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 4),
+
+            // 📷 CAMERA VIEWFINDER (SQUIRCLE FRAMED)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: PastelColors.lavender.withValues(alpha: 0.35),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: PastelColors.lavender.withValues(alpha: 0.2),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: aspectRatio,
+                        child: GestureDetector(
+                          onDoubleTap: _switchCamera,
+                          onScaleStart: (_) {
+                            _pinchStartZoom = zoom;
+                          },
+                          onScaleUpdate: (details) {
+                            final adjustedScale =
+                                1 + ((details.scale - 1) * 0.3);
+                            final newZoom =
+                                (_pinchStartZoom * adjustedScale).clamp(
+                              minZoom,
+                              maxZoom,
+                            );
+                            controller.setZoomLevel(newZoom);
+                            setState(() => zoom = newZoom);
+                          },
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CameraPreview(controller),
+                              if (showGrid) const _CuteGridOverlay(),
+
+                              // Capture Flash Effect
+                              AnimatedBuilder(
+                                animation: _flashAnim,
+                                builder: (context, child) {
+                                  if (_flashAnim.value == 0) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Container(
+                                    color: PastelColors.pinkLight.withValues(
+                                      alpha: _flashAnim.value * 0.85,
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // Viewfinder watermark indicator if enabled
+                              if (geocamOn)
+                                Positioned(
+                                  bottom: 10,
+                                  right: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.stars_rounded,
+                                          size: 11,
+                                          color: PastelColors.pink,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'GEOCAM ON',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // 🔍 ZOOM BAR
+            Center(
+              child: CuteZoomBar(
+                currentZoom: zoom,
+                minZoom: minZoom,
+                maxZoom: maxZoom,
+                onZoomChanged: _applyZoom,
+                onStartContinuousIn: () => _startContinuousZoom(0.05),
+                onStartContinuousOut: () => _startContinuousZoom(-0.05),
+                onStopContinuous: _stopContinuousZoom,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // 🎨 CUTE FILTER SELECTOR
+            CuteFilterSelector(
+              currentFilter: filter,
+              onFilterSelected: (newFilter) {
+                setState(() => filter = newFilter);
+              },
+            ),
+
+            const SizedBox(height: 14),
+
+            // 🌸 BOTTOM CONTROLS DECK
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Ratio / Aspect Button
+                  CuteIconButton(
+                    icon: Icons.aspect_ratio_rounded,
+                    size: 52,
+                    iconSize: 24,
+                    activeColor: PastelColors.sky,
+                    tooltip: 'Change Aspect Ratio',
+                    onPressed: _showAspectRatioSheet,
+                  ),
+
+                  // Big Cute Shutter Button
+                  CuteShutterButton(
+                    onTap: capture,
+                    processing: processing,
+                    size: 82,
+                  ),
+
+                  // Flip Camera Button
+                  CuteIconButton(
+                    icon: Icons.flip_camera_ios_rounded,
+                    size: 52,
+                    iconSize: 24,
+                    activeColor: PastelColors.lavender,
+                    tooltip: 'Flip Camera',
+                    onPressed: _switchCamera,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

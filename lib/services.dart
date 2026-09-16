@@ -17,30 +17,102 @@ Future<Uint8List> addWatermark({
   final w = uiImage.width.toDouble();
   final h = uiImage.height.toDouble();
 
+  // Draw base photo
   canvas.drawImage(uiImage, Offset.zero, Paint());
 
-  final overlayH = h * 0.22;
+  final overlayH = h * 0.20;
   final overlayTop = h - overlayH;
+
+  // Modern gradient overlay strip
+  final overlayPaint = Paint()
+    ..shader = ui.Gradient.linear(
+      Offset(0, overlayTop),
+      Offset(0, h),
+      [
+        const Color(0x00000000),
+        const Color(0xB316131D),
+        const Color(0xF216131D),
+      ],
+      [0.0, 0.25, 1.0],
+    );
 
   canvas.drawRect(
     Rect.fromLTWH(0, overlayTop, w, overlayH),
-    Paint()..color = const Color(0xE6000000),
+    overlayPaint,
   );
 
-  final titleSize = h * 0.045;
-  final bodySize = h * 0.032;
-  final metaSize = h * 0.028;
+  // Subtle pastel accent line at the bottom
+  final accentPaint = Paint()
+    ..shader = ui.Gradient.linear(
+      Offset(w * 0.08, h - 6),
+      Offset(w * 0.92, h - 6),
+      [
+        const Color(0xFFFFB5C5),
+        const Color(0xFFD6C7FF),
+        const Color(0xFFBAE1FF),
+      ],
+    )
+    ..strokeWidth = (h * 0.004).clamp(2.0, 6.0);
 
-  double y = overlayTop + overlayH * 0.18;
+  canvas.drawLine(
+    Offset(w * 0.08, h - (h * 0.012)),
+    Offset(w * 0.92, h - (h * 0.012)),
+    accentPaint,
+  );
+
+  final titleSize = h * 0.038;
+  final bodySize = h * 0.026;
+  final metaSize = h * 0.022;
+
+  double y = overlayTop + (overlayH * 0.28);
   final left = w * 0.08;
 
-  draw(canvas, location, titleSize, FontWeight.w600, left, y, w);
-  y += titleSize * 1.2;
-  draw(canvas, address, bodySize, FontWeight.normal, left, y, w);
-  y += bodySize * 1.15;
-  draw(canvas, latLng, metaSize, FontWeight.normal, left, y, w);
-  y += metaSize * 1.1;
-  draw(canvas, dateTime, metaSize, FontWeight.normal, left, y, w);
+  draw(
+    canvas,
+    location,
+    titleSize,
+    FontWeight.w700,
+    left,
+    y,
+    w,
+    color: const Color(0xFFFAF7FC),
+  );
+  y += titleSize * 1.25;
+
+  draw(
+    canvas,
+    address,
+    bodySize,
+    FontWeight.w400,
+    left,
+    y,
+    w,
+    color: const Color(0xFFE8E3EE),
+  );
+  y += bodySize * 1.2;
+
+  draw(
+    canvas,
+    "📍 $latLng",
+    metaSize,
+    FontWeight.w400,
+    left,
+    y,
+    w,
+    color: const Color(0xFFD6C7FF),
+  );
+  y += metaSize * 1.15;
+
+  draw(
+    canvas,
+    "⏰ $dateTime",
+    metaSize,
+    FontWeight.w400,
+    left,
+    y,
+    w,
+    color: const Color(0xFFB5EAD7),
+  );
 
   final pic = recorder.endRecording();
   final imgOut = await pic.toImage(uiImage.width, uiImage.height);
@@ -55,12 +127,18 @@ void draw(
   FontWeight weight,
   double x,
   double y,
-  double w,
-) {
+  double w, {
+  Color color = Colors.white,
+}) {
   final tp = TextPainter(
     text: TextSpan(
       text: text,
-      style: TextStyle(color: Colors.white, fontSize: size, fontWeight: weight),
+      style: TextStyle(
+        color: color,
+        fontSize: size,
+        fontWeight: weight,
+        letterSpacing: 0.2,
+      ),
     ),
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: w * 0.84);
