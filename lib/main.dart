@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: null, // Uses default system font with crisp rendering
         splashFactory: InkSparkle.splashFactory,
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
             TargetPlatform.android: ZoomPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
