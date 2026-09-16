@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -92,6 +93,8 @@ class _CameraPageState extends State<CameraPage>
   bool torchSupported = true;
   bool showGrid = true;
   _LocationStamp? customLocation;
+  _LocationStamp? _cachedLocationStamp;
+  StreamSubscription<Position>? _positionSub;
 
   late AnimationController _zoomAnim;
   late AnimationController _flashAnim;
@@ -113,15 +116,102 @@ class _CameraPageState extends State<CameraPage>
       duration: const Duration(milliseconds: 250),
     );
     _initializeCamera();
+    _initLocationService();
   }
 
   @override
   void dispose() {
+    _positionSub?.cancel();
     _zoomTimer?.cancel();
     _zoomAnim.dispose();
     _flashAnim.dispose();
     controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _initLocationService() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      // Check last known position immediately for instant warmup (0ms)
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null) {
+        await _updateLocationFromPosition(lastPos);
+      }
+
+      // Query current location in background
+      Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).then(_updateLocationFromPosition).catchError((_) {});
+
+      // Keep location updated via stream as device moves
+      _positionSub = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 25,
+        ),
+      ).listen(_updateLocationFromPosition);
+    } catch (e) {
+      debugPrint('[GeoCam Location Service Error] $e');
+    }
+  }
+
+  Future<void> _updateLocationFromPosition(Position pos) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        pos.latitude,
+        pos.longitude,
+      );
+      final p = placemarks.isNotEmpty ? placemarks.first : null;
+
+      final city = p?.locality ?? p?.subAdministrativeArea ?? '';
+      final region = p?.administrativeArea ?? '';
+      final country = p?.country ?? '';
+
+      final locationParts = [city, region, country].where((s) => s.isNotEmpty).toList();
+      final locationStr = locationParts.isNotEmpty
+          ? locationParts.join(', ')
+          : "Lat ${pos.latitude.toStringAsFixed(4)}, Long ${pos.longitude.toStringAsFixed(4)}";
+
+      final street = p?.street ?? '';
+      final subLocality = p?.subLocality ?? '';
+      final addressParts = [street, subLocality].where((s) => s.isNotEmpty).toList();
+      final addressStr = addressParts.join(', ');
+
+      final stamp = _LocationStamp(
+        location: locationStr,
+        address: addressStr,
+        latLng:
+            "Lat ${pos.latitude.toStringAsFixed(6)}, "
+            "Long ${pos.longitude.toStringAsFixed(6)}",
+      );
+
+      if (mounted) {
+        setState(() => _cachedLocationStamp = stamp);
+      } else {
+        _cachedLocationStamp = stamp;
+      }
+    } catch (_) {
+      final fallbackStamp = _LocationStamp(
+        location: "Lat ${pos.latitude.toStringAsFixed(4)}, Long ${pos.longitude.toStringAsFixed(4)}",
+        address: "",
+        latLng:
+            "Lat ${pos.latitude.toStringAsFixed(6)}, "
+            "Long ${pos.longitude.toStringAsFixed(6)}",
+      );
+      if (mounted) {
+        setState(() => _cachedLocationStamp = fallbackStamp);
+      } else {
+        _cachedLocationStamp = fallbackStamp;
+      }
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -236,7 +326,7 @@ class _CameraPageState extends State<CameraPage>
         cameras[cameraIndex].lensDirection == CameraLensDirection.back;
     if (!isRearCamera) {
       if (!mounted) return;
-      _showCuteSnackBar('Flashlight is only available on the rear camera 🌟');
+      _showCuteSnackBar('Flashlight is only available on the rear camera');
       return;
     }
 
@@ -258,7 +348,7 @@ class _CameraPageState extends State<CameraPage>
         torchOn = false;
         torchSupported = false;
       });
-      _showCuteSnackBar('This camera does not support flashlight control 💡');
+      _showCuteSnackBar('This camera does not support flashlight control');
     }
   }
 
@@ -288,6 +378,7 @@ class _CameraPageState extends State<CameraPage>
   Future<void> capture() async {
     if (processing || !controller.value.isInitialized) return;
 
+    final captureWatch = Stopwatch()..start();
     HapticFeedback.mediumImpact();
     SystemSound.play(SystemSoundType.click);
 
@@ -298,87 +389,111 @@ class _CameraPageState extends State<CameraPage>
 
     try {
       final XFile file = await controller.takePicture();
-      final Uint8List originalBytes = await file.readAsBytes();
-      final locationStamp = await _resolveLocationStamp();
-      if (locationStamp == null) {
-        return;
-      }
+      final shutterLag = captureWatch.elapsedMilliseconds;
+      debugPrint(
+        '[GeoCam Benchmark] Shutter tap -> Hardware takePicture completed in ${shutterLag}ms',
+      );
+
+      // Instant 0ms location retrieval from cached memory
+      final locationStamp = customLocation ??
+          _cachedLocationStamp ??
+          const _LocationStamp(
+            location: '',
+            address: '',
+            latLng: '',
+          );
 
       final dateTime = formatDateTime();
 
-      unawaited(() async {
-        final processed = await compute(processImage, {
-          'bytes': originalBytes,
-          'filter': filter,
-          'whiteFrame': whiteFrame,
-          'aspectRatio': aspectRatio,
-          'autoRotate': autoRotate,
-        });
+      // Snapshot current camera settings
+      final currentFilter = filter;
+      final currentAspectRatio = aspectRatio;
+      final currentWhiteFrame = whiteFrame;
+      final currentAutoRotate = autoRotate;
+      final currentGeocamOn = geocamOn;
+      final filePath = file.path;
 
-        Uint8List finalImage = processed;
-        if (geocamOn) {
-          final watermarked = await addWatermark(
-            imageBytes: processed,
-            location: locationStamp.location,
-            address: locationStamp.address,
-            latLng: locationStamp.latLng,
-            dateTime: dateTime,
-          );
-          finalImage = watermarked;
-        }
-
-        await saveToGallery(finalImage);
-      }());
-    } finally {
+      // UNBLOCK UI IMMEDIATELY! Viewfinder and Shutter are responsive for the next shot
       if (mounted) {
         setState(() => processing = false);
       }
+
+      // Background asynchronous zero-copy native processing
+      unawaited(() async {
+        final bgWatch = Stopwatch()..start();
+        final success = await processAndSaveImageNative(
+          inputPath: filePath,
+          filter: currentFilter,
+          aspectRatio: currentAspectRatio,
+          whiteFrame: currentWhiteFrame,
+          autoRotate: currentAutoRotate,
+          geocamOn: currentGeocamOn,
+          location: locationStamp.location,
+          address: locationStamp.address,
+          latLng: locationStamp.latLng,
+          dateTime: dateTime,
+        );
+
+        if (!success) {
+          // Fallback to Dart pipeline if native failed
+          try {
+            final bytes = await File(filePath).readAsBytes();
+            final processed = await compute(processImage, {
+              'bytes': bytes,
+              'filter': currentFilter,
+              'whiteFrame': currentWhiteFrame,
+              'aspectRatio': currentAspectRatio,
+              'autoRotate': currentAutoRotate,
+            });
+
+            Uint8List finalImage = processed;
+            if (currentGeocamOn && locationStamp.location.isNotEmpty) {
+              finalImage = await addWatermark(
+                imageBytes: processed,
+                location: locationStamp.location,
+                address: locationStamp.address,
+                latLng: locationStamp.latLng,
+                dateTime: dateTime,
+              );
+            }
+            await saveToGallery(finalImage);
+          } catch (e) {
+            debugPrint('[GeoCam Fallback Error] $e');
+          }
+        }
+
+        bgWatch.stop();
+        debugPrint(
+          '[GeoCam Benchmark] Total background processing & save completed in ${bgWatch.elapsedMilliseconds}ms',
+        );
+      }());
+    } catch (e) {
+      debugPrint('[GeoCam Capture Error] $e');
+      if (mounted) {
+        setState(() => processing = false);
+        _showCuteSnackBar('Capture failed: $e');
+      }
     }
-  }
-
-  Future<_LocationStamp?> _resolveLocationStamp() async {
-    if (customLocation != null) return customLocation;
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return null;
-    }
-
-    final pos = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    final placemarks = await placemarkFromCoordinates(
-      pos.latitude,
-      pos.longitude,
-    );
-    final p = placemarks.first;
-
-    return _LocationStamp(
-      location: "${p.locality}, ${p.administrativeArea}, ${p.country}",
-      address: "${p.street}, ${p.subLocality}",
-      latLng:
-          "Lat ${pos.latitude.toStringAsFixed(6)}, "
-          "Long ${pos.longitude.toStringAsFixed(6)}",
-    );
   }
 
   Future<void> _openLocationPicker() async {
     final locationController = TextEditingController(
-      text: customLocation?.location ?? '',
+      text: customLocation?.location ?? _cachedLocationStamp?.location ?? '',
     );
     final addressController = TextEditingController(
-      text: customLocation?.address ?? '',
+      text: customLocation?.address ?? _cachedLocationStamp?.address ?? '',
     );
     final latController = TextEditingController(
-      text: _extractCoordinate(customLocation?.latLng, 'Lat'),
+      text: _extractCoordinate(
+        customLocation?.latLng ?? _cachedLocationStamp?.latLng,
+        'Lat',
+      ),
     );
     final lngController = TextEditingController(
-      text: _extractCoordinate(customLocation?.latLng, 'Long'),
+      text: _extractCoordinate(
+        customLocation?.latLng ?? _cachedLocationStamp?.latLng,
+        'Long',
+      ),
     );
 
     try {
@@ -580,7 +695,7 @@ class _CameraPageState extends State<CameraPage>
                                       ],
                                     ),
                                     child: const Text(
-                                      'Save Tag ✨',
+                                      'Save Tag',
                                       style: TextStyle(
                                         color: PastelColors.textDark,
                                         fontWeight: FontWeight.bold,
@@ -721,7 +836,7 @@ class _CameraPageState extends State<CameraPage>
               ),
               const SizedBox(height: 18),
               const Text(
-                'Aspect Ratio 📐',
+                'Aspect Ratio',
                 style: TextStyle(
                   color: PastelColors.textLight,
                   fontSize: 16,
@@ -835,7 +950,7 @@ class _CameraPageState extends State<CameraPage>
               ),
               const SizedBox(height: 18),
               const Text(
-                'Starting Geocam... ✨',
+                'Starting Geocam...',
                 style: TextStyle(
                   color: PastelColors.textLight,
                   fontSize: 15,
@@ -857,7 +972,7 @@ class _CameraPageState extends State<CameraPage>
       body: SafeArea(
         child: Column(
           children: [
-            // 🌸 TOP FLOATING CONTROL ISLAND
+            // TOP FLOATING CONTROL ISLAND
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
               child: Container(
@@ -946,7 +1061,7 @@ class _CameraPageState extends State<CameraPage>
               ),
             ),
 
-            // 📍 STATUS RIBBON (Location & Lens Info)
+            // STATUS RIBBON (Location & Lens Info)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
@@ -955,15 +1070,20 @@ class _CameraPageState extends State<CameraPage>
                   // Location Status Pill (Tap to edit custom location)
                   Flexible(
                     child: CuteBadge(
-                      icon: customLocation == null
-                          ? Icons.gps_fixed_rounded
-                          : Icons.edit_location_alt_rounded,
-                      label: customLocation == null
-                          ? 'GPS Auto'
-                          : '📍 ${customLocation!.location}',
-                      color: customLocation == null
-                          ? PastelColors.mint
-                          : PastelColors.peachDeep,
+                      icon: customLocation != null
+                          ? Icons.edit_location_alt_rounded
+                          : (_cachedLocationStamp != null
+                              ? Icons.location_on_rounded
+                              : Icons.gps_fixed_rounded),
+                      label: customLocation != null
+                          ? customLocation!.location
+                          : (_cachedLocationStamp != null &&
+                                  _cachedLocationStamp!.location.isNotEmpty
+                              ? _cachedLocationStamp!.location
+                              : 'GPS Auto'),
+                      color: customLocation != null
+                          ? PastelColors.peachDeep
+                          : PastelColors.mint,
                       onTap: _openLocationPicker,
                     ),
                   ),

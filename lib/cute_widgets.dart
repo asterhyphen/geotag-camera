@@ -314,14 +314,12 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
 class FilterOption {
   final String id;
   final String name;
-  final String emoji;
   final Color accentColor;
   final IconData icon;
 
   const FilterOption({
     required this.id,
     required this.name,
-    required this.emoji,
     required this.accentColor,
     required this.icon,
   });
@@ -331,30 +329,26 @@ const List<FilterOption> kFilterOptions = [
   FilterOption(
     id: 'none',
     name: 'Natural',
-    emoji: '🌸',
     accentColor: PastelColors.pink,
-    icon: Icons.auto_awesome,
+    icon: Icons.auto_awesome_rounded,
   ),
   FilterOption(
     id: 'vintage',
     name: 'Vintage',
-    emoji: '🎞️',
     accentColor: PastelColors.peach,
-    icon: Icons.camera_roll_outlined,
+    icon: Icons.filter_vintage_rounded,
   ),
   FilterOption(
     id: 'mono',
     name: 'Mono',
-    emoji: '🖤',
     accentColor: PastelColors.lavender,
     icon: Icons.contrast_rounded,
   ),
   FilterOption(
     id: 'sepia',
     name: 'Sepia',
-    emoji: '☕',
     accentColor: PastelColors.butter,
-    icon: Icons.coffee_rounded,
+    icon: Icons.wb_sunny_rounded,
   ),
 ];
 
@@ -421,11 +415,14 @@ class CuteFilterSelector extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      opt.emoji,
-                      style: const TextStyle(fontSize: 13),
+                    Icon(
+                      opt.icon,
+                      size: 14,
+                      color: isSelected
+                          ? PastelColors.textDark
+                          : PastelColors.textMuted,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     Text(
                       opt.name,
                       style: TextStyle(
