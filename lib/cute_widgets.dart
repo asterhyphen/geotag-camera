@@ -725,7 +725,7 @@ class _VintageFocusPainter extends CustomPainter {
 
     // Top-right corner
     canvas.drawLine(Offset(w, 0), Offset(w - cornerLen, 0), paint);
-    canvas.drawLine(Offset(w, 0), const Offset(w, cornerLen), paint);
+    canvas.drawLine(Offset(w, 0), Offset(w, cornerLen), paint);
 
     // Bottom-left corner
     canvas.drawLine(Offset(0, h), Offset(cornerLen, h), paint);

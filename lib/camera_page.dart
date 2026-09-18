@@ -1618,59 +1618,61 @@ class _CameraPageState extends State<CameraPage>
                                       exposureOffset: exposureOffset,
                                     ),
 
-                              // Capture Flash Effect
-                              AnimatedBuilder(
-                                animation: _flashAnim,
-                                builder: (context, child) {
-                                  if (_flashAnim.value == 0) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Container(
-                                    color: PastelColors.pinkLight.withValues(
-                                      alpha: _flashAnim.value * 0.85,
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              // Viewfinder watermark indicator if enabled
-                              if (geocamOn)
-                                Positioned(
-                                  bottom: 10,
-                                  right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.stars_rounded,
-                                          size: 11,
-                                          color: PastelColors.pink,
+                                  // Capture Flash Effect
+                                  AnimatedBuilder(
+                                    animation: _flashAnim,
+                                    builder: (context, child) {
+                                      if (_flashAnim.value == 0) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Container(
+                                        color: PastelColors.pinkLight.withValues(
+                                          alpha: _flashAnim.value * 0.85,
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'GEOCAM ON',
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.6,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   ),
-                                ),
-                            ],
-                          ),
+
+                                  // Viewfinder watermark indicator if enabled
+                                  if (geocamOn)
+                                    Positioned(
+                                      bottom: 10,
+                                      right: 12,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.5),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.stars_rounded,
+                                              size: 11,
+                                              color: PastelColors.pink,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'GEOCAM ON',
+                                              style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
