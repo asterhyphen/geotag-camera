@@ -129,36 +129,32 @@ class MainActivity : FlutterActivity() {
         val originalBitmap = BitmapFactory.decodeFile(inputPath) ?: return false
 
         // 2. Handle Orientation
-        val currentBitmap = if (autoRotate) {
-            val exif = try { ExifInterface(inputPath) } catch (e: Exception) { null }
-            val orientation = exif?.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL
-            ) ?: ExifInterface.ORIENTATION_NORMAL
+        val exif = try { ExifInterface(inputPath) } catch (e: Exception) { null }
+        val orientation = exif?.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        ) ?: ExifInterface.ORIENTATION_NORMAL
 
-            val rotationDegrees = when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                else -> 0f
-            }
+        val rotationDegrees = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> 0f
+        }
 
-            if (rotationDegrees != 0f) {
-                val matrix = Matrix().apply { postRotate(rotationDegrees) }
-                val rotated = Bitmap.createBitmap(
-                    originalBitmap,
-                    0,
-                    0,
-                    originalBitmap.width,
-                    originalBitmap.height,
-                    matrix,
-                    true
-                )
-                if (rotated != originalBitmap) originalBitmap.recycle()
-                rotated
-            } else {
-                originalBitmap
-            }
+        val currentBitmap = if (rotationDegrees != 0f) {
+            val matrix = Matrix().apply { postRotate(rotationDegrees) }
+            val rotated = Bitmap.createBitmap(
+                originalBitmap,
+                0,
+                0,
+                originalBitmap.width,
+                originalBitmap.height,
+                matrix,
+                true
+            )
+            if (rotated != originalBitmap) originalBitmap.recycle()
+            rotated
         } else {
             originalBitmap
         }
