@@ -663,3 +663,172 @@ class CuteZoomBar extends StatelessWidget {
     );
   }
 }
+
+/// Animated Vintage Focus Reticle
+class VintageFocusRing extends StatelessWidget {
+  final Offset position;
+  final double exposureOffset;
+
+  const VintageFocusRing({
+    super.key,
+    required this.position,
+    this.exposureOffset = 0.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: position.dx - 34,
+      top: position.dy - 34,
+      child: IgnorePointer(
+        child: SizedBox(
+          width: 68,
+          height: 68,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: const Size(64, 64),
+                painter: _VintageFocusPainter(),
+              ),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: PastelColors.butter,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VintageFocusPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = PastelColors.butter.withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final w = size.width;
+    final h = size.height;
+    const cornerLen = 10.0;
+
+    // Top-left corner
+    canvas.drawLine(const Offset(0, 0), const Offset(cornerLen, 0), paint);
+    canvas.drawLine(const Offset(0, 0), const Offset(0, cornerLen), paint);
+
+    // Top-right corner
+    canvas.drawLine(Offset(w, 0), Offset(w - cornerLen, 0), paint);
+    canvas.drawLine(Offset(w, 0), const Offset(w, cornerLen), paint);
+
+    // Bottom-left corner
+    canvas.drawLine(Offset(0, h), Offset(cornerLen, h), paint);
+    canvas.drawLine(Offset(0, h), Offset(0, h - cornerLen), paint);
+
+    // Bottom-right corner
+    canvas.drawLine(Offset(w, h), Offset(w - cornerLen, h), paint);
+    canvas.drawLine(Offset(w, h), Offset(w, h - cornerLen), paint);
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+/// Vintage Exposure Compensation Slider
+class VintageExposureSlider extends StatelessWidget {
+  final double value;
+  final double min;
+  final double max;
+  final ValueChanged<double> onChanged;
+  final VoidCallback? onClose;
+
+  const VintageExposureSlider({
+    super.key,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final evString = '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)} EV';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: PastelColors.surfaceDark.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: PastelColors.butter.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: PastelShadows.soft(color: PastelColors.butter.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.wb_sunny_rounded,
+            size: 16,
+            color: PastelColors.butter,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            evString,
+            style: const TextStyle(
+              color: PastelColors.butter,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
+            ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: PastelColors.butter,
+                inactiveTrackColor: PastelColors.lavender.withValues(alpha: 0.25),
+                thumbColor: PastelColors.butter,
+                overlayColor: PastelColors.butter.withValues(alpha: 0.2),
+                trackHeight: 3.0,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              ),
+              child: Slider(
+                value: value.clamp(min, max),
+                min: min,
+                max: max,
+                onChanged: (newVal) {
+                  HapticFeedback.selectionClick();
+                  onChanged(newVal);
+                },
+              ),
+            ),
+          ),
+          if (onClose != null)
+            BouncyTap(
+              onTap: onClose,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: PastelColors.cardDark.withValues(alpha: 0.6),
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 14,
+                  color: PastelColors.textMuted,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

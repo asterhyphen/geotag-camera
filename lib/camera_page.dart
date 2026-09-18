@@ -96,6 +96,13 @@ class _CameraPageState extends State<CameraPage>
   _LocationStamp? _cachedLocationStamp;
   StreamSubscription<Position>? _positionSub;
 
+  double minExposure = -2.0;
+  double maxExposure = 2.0;
+  double exposureOffset = 0.0;
+  bool showExposureSlider = false;
+  Offset? focusPoint;
+  Timer? _focusTimer;
+
   late AnimationController _zoomAnim;
   late AnimationController _flashAnim;
   double minZoom = 1.0;
@@ -121,6 +128,7 @@ class _CameraPageState extends State<CameraPage>
 
   @override
   void dispose() {
+    _focusTimer?.cancel();
     _positionSub?.cancel();
     _zoomTimer?.cancel();
     _zoomAnim.dispose();
@@ -224,12 +232,58 @@ class _CameraPageState extends State<CameraPage>
     minZoom = await controller.getMinZoomLevel();
     maxZoom = await controller.getMaxZoomLevel();
 
+    try {
+      minExposure = await controller.getMinExposureOffset();
+      maxExposure = await controller.getMaxExposureOffset();
+      exposureOffset = 0.0.clamp(minExposure, maxExposure);
+      await controller.setExposureOffset(exposureOffset);
+    } catch (_) {}
+
     zoom = 1.0.clamp(minZoom, maxZoom);
     await controller.setZoomLevel(zoom);
     await _syncCaptureOrientation();
     await _syncTorchState();
 
     if (mounted) setState(() => ready = true);
+  }
+
+  Future<void> _onTapToFocus(TapUpDetails details, Size viewSize) async {
+    if (!controller.value.isInitialized) return;
+
+    final x = details.localPosition.dx;
+    final y = details.localPosition.dy;
+
+    setState(() {
+      focusPoint = Offset(x, y);
+    });
+
+    _focusTimer?.cancel();
+    _focusTimer = Timer(const Duration(milliseconds: 2200), () {
+      if (mounted) {
+        setState(() {
+          focusPoint = null;
+        });
+      }
+    });
+
+    try {
+      final nx = (x / viewSize.width).clamp(0.0, 1.0);
+      final ny = (y / viewSize.height).clamp(0.0, 1.0);
+      await controller.setFocusPoint(Offset(nx, ny));
+      await controller.setExposurePoint(Offset(nx, ny));
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+  }
+
+  Future<void> _setExposure(double value) async {
+    if (!controller.value.isInitialized) return;
+    final clamped = value.clamp(minExposure, maxExposure);
+    try {
+      await controller.setExposureOffset(clamped);
+      setState(() {
+        exposureOffset = clamped;
+      });
+    } catch (_) {}
   }
 
   void _applyZoom(double target) {
@@ -1178,6 +1232,20 @@ class _CameraPageState extends State<CameraPage>
                       onPressed: _toggleTorch,
                     ),
 
+                    // Exposure Control Toggle
+                    CuteIconButton(
+                      icon: showExposureSlider
+                          ? Icons.wb_sunny_rounded
+                          : Icons.wb_sunny_outlined,
+                      isActive: showExposureSlider,
+                      activeColor: PastelColors.butter,
+                      tooltip: 'Exposure / Brightness',
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => showExposureSlider = !showExposureSlider);
+                      },
+                    ),
+
                     // Grid Toggle
                     CuteIconButton(
                       icon: showGrid
@@ -1271,6 +1339,17 @@ class _CameraPageState extends State<CameraPage>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Exposure EV Badge (Quick toggle)
+                      CuteBadge(
+                        icon: Icons.wb_sunny_rounded,
+                        label: '${exposureOffset >= 0 ? '+' : ''}${exposureOffset.toStringAsFixed(1)} EV',
+                        color: showExposureSlider ? PastelColors.butter : PastelColors.lavender,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => showExposureSlider = !showExposureSlider);
+                        },
+                      ),
+                      const SizedBox(width: 6),
                       // Selfie / Rear Badge
                       CuteBadge(
                         icon: isFrontCamera
@@ -1292,6 +1371,18 @@ class _CameraPageState extends State<CameraPage>
                 ],
               ),
             ),
+
+            // Exposure Slider if open
+            if (showExposureSlider) ...[
+              const SizedBox(height: 6),
+              VintageExposureSlider(
+                value: exposureOffset,
+                min: minExposure,
+                max: maxExposure,
+                onChanged: _setExposure,
+                onClose: () => setState(() => showExposureSlider = false),
+              ),
+            ],
 
             const SizedBox(height: 4),
 
@@ -1320,27 +1411,42 @@ class _CameraPageState extends State<CameraPage>
                       ),
                       child: AspectRatio(
                         aspectRatio: aspectRatio,
-                        child: GestureDetector(
-                          onDoubleTap: _switchCamera,
-                          onScaleStart: (_) {
-                            _pinchStartZoom = zoom;
-                          },
-                          onScaleUpdate: (details) {
-                            final adjustedScale =
-                                1 + ((details.scale - 1) * 0.3);
-                            final newZoom =
-                                (_pinchStartZoom * adjustedScale).clamp(
-                              minZoom,
-                              maxZoom,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final viewSize = Size(
+                              constraints.maxWidth,
+                              constraints.maxHeight,
                             );
-                            controller.setZoomLevel(newZoom);
-                            setState(() => zoom = newZoom);
-                          },
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              _buildCameraPreviewWidget(),
-                              if (showGrid) const _CuteGridOverlay(),
+
+                            return GestureDetector(
+                              onDoubleTap: _switchCamera,
+                              onTapUp: (details) => _onTapToFocus(details, viewSize),
+                              onScaleStart: (_) {
+                                _pinchStartZoom = zoom;
+                              },
+                              onScaleUpdate: (details) {
+                                final adjustedScale =
+                                    1 + ((details.scale - 1) * 0.3);
+                                final newZoom =
+                                    (_pinchStartZoom * adjustedScale).clamp(
+                                  minZoom,
+                                  maxZoom,
+                                );
+                                controller.setZoomLevel(newZoom);
+                                setState(() => zoom = newZoom);
+                              },
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _buildCameraPreviewWidget(),
+                                  if (showGrid) const _CuteGridOverlay(),
+
+                                  // Focus Reticle Ring
+                                  if (focusPoint != null)
+                                    VintageFocusRing(
+                                      position: focusPoint!,
+                                      exposureOffset: exposureOffset,
+                                    ),
 
                               // Capture Flash Effect
                               AnimatedBuilder(
