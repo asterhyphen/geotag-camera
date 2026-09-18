@@ -500,10 +500,84 @@ class _CameraPageState extends State<CameraPage>
       final pickedLocation = await showDialog<_LocationStamp?>(
         context: context,
         builder: (context) {
-          String? errorText;
+          String? statusText;
+          bool isSuccess = false;
+          bool isDetecting = false;
 
           return StatefulBuilder(
             builder: (context, setModalState) {
+              Future<void> autoDetectCoordinates() async {
+                final query = [
+                  addressController.text.trim(),
+                  locationController.text.trim(),
+                ].where((s) => s.isNotEmpty).join(', ');
+
+                if (query.isEmpty) {
+                  setModalState(() {
+                    statusText = 'Please enter a City or Address first to detect coordinates!';
+                    isSuccess = false;
+                  });
+                  return;
+                }
+
+                setModalState(() {
+                  isDetecting = true;
+                  statusText = 'Finding coordinates for "$query"...';
+                  isSuccess = false;
+                });
+
+                try {
+                  final locations = await locationFromAddress(query);
+                  if (locations.isNotEmpty) {
+                    final loc = locations.first;
+                    latController.text = loc.latitude.toStringAsFixed(6);
+                    lngController.text = loc.longitude.toStringAsFixed(6);
+                    setModalState(() {
+                      isDetecting = false;
+                      statusText = 'Coordinates auto-detected successfully!';
+                      isSuccess = true;
+                    });
+                    HapticFeedback.selectionClick();
+                    return;
+                  }
+                } catch (_) {}
+
+                // Fallback: try using current GPS if query lookup failed
+                try {
+                  final currentPos = _cachedLocationStamp != null
+                      ? null
+                      : await Geolocator.getLastKnownPosition();
+                  final lat = _extractCoordinate(_cachedLocationStamp?.latLng, 'Lat');
+                  final lng = _extractCoordinate(_cachedLocationStamp?.latLng, 'Long');
+
+                  if (lat.isNotEmpty && lng.isNotEmpty) {
+                    latController.text = lat;
+                    lngController.text = lng;
+                    setModalState(() {
+                      isDetecting = false;
+                      statusText = 'Filled with your current GPS coordinates';
+                      isSuccess = true;
+                    });
+                    return;
+                  } else if (currentPos != null) {
+                    latController.text = currentPos.latitude.toStringAsFixed(6);
+                    lngController.text = currentPos.longitude.toStringAsFixed(6);
+                    setModalState(() {
+                      isDetecting = false;
+                      statusText = 'Filled with your current GPS coordinates';
+                      isSuccess = true;
+                    });
+                    return;
+                  }
+                } catch (_) {}
+
+                setModalState(() {
+                  isDetecting = false;
+                  statusText = 'Could not find coordinates for this location. You can enter them manually.';
+                  isSuccess = false;
+                });
+              }
+
               return Dialog(
                 backgroundColor: Colors.transparent,
                 insetPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -568,6 +642,65 @@ class _CameraPageState extends State<CameraPage>
                         ),
                         const SizedBox(height: 12),
 
+                        // Autodetect Coordinates Button Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: BouncyTap(
+                                onTap: isDetecting ? null : autoDetectCoordinates,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 9,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: PastelColors.lavender.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: PastelColors.lavender.withValues(alpha: 0.35),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (isDetecting) ...[
+                                        const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              PastelColors.lavender,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                      ] else ...[
+                                        const Icon(
+                                          Icons.auto_fix_high_rounded,
+                                          size: 15,
+                                          color: PastelColors.lavender,
+                                        ),
+                                        const SizedBox(width: 6),
+                                      ],
+                                      const Text(
+                                        'Auto-Detect Lat/Long',
+                                        style: TextStyle(
+                                          color: PastelColors.lavender,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
                         Row(
                           children: [
                             Expanded(
@@ -592,13 +725,14 @@ class _CameraPageState extends State<CameraPage>
                           ],
                         ),
 
-                        if (errorText != null) ...[
+                        if (statusText != null) ...[
                           const SizedBox(height: 12),
                           Text(
-                            errorText!,
-                            style: const TextStyle(
-                              color: PastelColors.pinkDeep,
+                            statusText!,
+                            style: TextStyle(
+                              color: isSuccess ? PastelColors.mint : PastelColors.pinkDeep,
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -644,36 +778,58 @@ class _CameraPageState extends State<CameraPage>
                                 ),
                                 const SizedBox(width: 6),
                                 BouncyTap(
-                                  onTap: () {
-                                    final location =
-                                        locationController.text.trim();
-                                    final address =
-                                        addressController.text.trim();
-                                    final latitude = double.tryParse(
-                                      latController.text.trim(),
-                                    );
-                                    final longitude = double.tryParse(
-                                      lngController.text.trim(),
-                                    );
+                                  onTap: () async {
+                                    var location = locationController.text.trim();
+                                    var address = addressController.text.trim();
+                                    var latStr = latController.text.trim();
+                                    var lngStr = lngController.text.trim();
 
-                                    if (location.isEmpty ||
-                                        address.isEmpty ||
-                                        latitude == null ||
-                                        longitude == null) {
+                                    // If empty, auto-fill from cached or current GPS
+                                    if (location.isEmpty && address.isEmpty) {
                                       setModalState(() {
-                                        errorText =
-                                            'Please fill all fields with valid coordinates!';
+                                        statusText = 'Please provide a location name or address!';
+                                        isSuccess = false;
                                       });
                                       return;
                                     }
 
+                                    double? latitude = double.tryParse(latStr);
+                                    double? longitude = double.tryParse(lngStr);
+
+                                    // If coordinates missing, attempt quick lookup or fallback to cached GPS
+                                    if (latitude == null || longitude == null) {
+                                      final query = [address, location].where((s) => s.isNotEmpty).join(', ');
+                                      try {
+                                        final locs = await locationFromAddress(query);
+                                        if (locs.isNotEmpty) {
+                                          latitude = locs.first.latitude;
+                                          longitude = locs.first.longitude;
+                                        }
+                                      } catch (_) {}
+                                    }
+
+                                    // Fallback to cached device GPS if available
+                                    if (latitude == null || longitude == null) {
+                                      final latCached = double.tryParse(_extractCoordinate(_cachedLocationStamp?.latLng, 'Lat'));
+                                      final lngCached = double.tryParse(_extractCoordinate(_cachedLocationStamp?.latLng, 'Long'));
+                                      if (latCached != null && lngCached != null) {
+                                        latitude = latCached;
+                                        longitude = lngCached;
+                                      } else {
+                                        latitude = 0.0;
+                                        longitude = 0.0;
+                                      }
+                                    }
+
+                                    final latLngStr = (latitude != 0.0 || longitude != 0.0)
+                                        ? "Lat ${latitude.toStringAsFixed(6)}, Long ${longitude.toStringAsFixed(6)}"
+                                        : "";
+
                                     Navigator.of(context).pop(
                                       _LocationStamp(
-                                        location: location,
+                                        location: location.isNotEmpty ? location : address,
                                         address: address,
-                                        latLng:
-                                            "Lat ${latitude.toStringAsFixed(6)}, "
-                                            "Long ${longitude.toStringAsFixed(6)}",
+                                        latLng: latLngStr,
                                       ),
                                     );
                                   },
