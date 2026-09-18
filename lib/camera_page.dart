@@ -326,7 +326,7 @@ class _CameraPageState extends State<CameraPage>
         cameras[cameraIndex].lensDirection == CameraLensDirection.back;
     if (!isRearCamera) {
       if (!mounted) return;
-      _showCuteSnackBar('Flashlight is only available on the rear camera');
+      _showAlert('Flashlight is only available on the rear camera', variant: VintageAlertVariant.warning, icon: Icons.flashlight_off_rounded);
       return;
     }
 
@@ -348,30 +348,21 @@ class _CameraPageState extends State<CameraPage>
         torchOn = false;
         torchSupported = false;
       });
-      _showCuteSnackBar('This camera does not support flashlight control');
+      _showAlert('This camera does not support flashlight control', variant: VintageAlertVariant.warning, icon: Icons.warning_amber_rounded);
     }
   }
 
-  void _showCuteSnackBar(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: PastelColors.surfaceDark.withValues(alpha: 0.95),
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: PastelColors.pink, width: 1.2),
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: PastelColors.textLight,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
+  void _showAlert(
+    String message, {
+    VintageAlertVariant variant = VintageAlertVariant.info,
+    IconData? icon,
+  }) {
+    if (!mounted) return;
+    showVintageAlert(
+      context,
+      message: message,
+      variant: variant,
+      icon: icon,
     );
   }
 
@@ -434,7 +425,9 @@ class _CameraPageState extends State<CameraPage>
           dateTime: dateTime,
         );
 
-        if (!success) {
+        if (success) {
+          _showAlert('Photo saved to gallery', variant: VintageAlertVariant.success, icon: Icons.photo_library_rounded);
+        } else {
           // Fallback to Dart pipeline if native failed
           try {
             final bytes = await File(filePath).readAsBytes();
@@ -457,8 +450,10 @@ class _CameraPageState extends State<CameraPage>
               );
             }
             await saveToGallery(finalImage);
+            _showAlert('Photo saved to gallery', variant: VintageAlertVariant.success, icon: Icons.photo_library_rounded);
           } catch (e) {
             debugPrint('[GeoCam Fallback Error] $e');
+            _showAlert('Failed to save photo: $e', variant: VintageAlertVariant.error);
           }
         }
 
@@ -471,7 +466,7 @@ class _CameraPageState extends State<CameraPage>
       debugPrint('[GeoCam Capture Error] $e');
       if (mounted) {
         setState(() => processing = false);
-        _showCuteSnackBar('Capture failed: $e');
+        _showAlert('Capture failed: $e', variant: VintageAlertVariant.error);
       }
     }
   }
