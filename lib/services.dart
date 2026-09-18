@@ -227,14 +227,14 @@ img.Image cropToAspect(img.Image src, double ratio) {
 
   if (current > ratio) {
     ch = h;
-    cw = (h * ratio).round();
-    x = ((w - cw) / 2).round();
+    cw = (h * ratio).round().clamp(1, w);
+    x = ((w - cw) / 2).round().clamp(0, w - cw);
     y = 0;
   } else {
     cw = w;
-    ch = (w / ratio).round();
+    ch = (w / ratio).round().clamp(1, h);
     x = 0;
-    y = ((h - ch) / 2).round();
+    y = ((h - ch) / 2).round().clamp(0, h - ch);
   }
 
   return img.copyCrop(src, x: x, y: y, width: cw, height: ch);

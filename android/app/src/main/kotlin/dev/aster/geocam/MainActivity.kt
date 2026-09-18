@@ -176,17 +176,20 @@ class MainActivity : FlutterActivity() {
 
             if (currentRatio > aspectRatio) {
                 targetH = curH
-                targetW = (curH * aspectRatio).toInt()
-                cropX = ((curW - targetW) / 2)
+                targetW = Math.min((curH * aspectRatio).toInt(), curW)
+                cropX = Math.max((curW - targetW) / 2, 0)
                 cropY = 0
             } else {
                 targetW = curW
-                targetH = (curW / aspectRatio).toInt()
+                targetH = Math.min((curW / aspectRatio).toInt(), curH)
                 cropX = 0
-                cropY = ((curH - targetH) / 2)
+                cropY = Math.max((curH - targetH) / 2, 0)
             }
 
-            val cropped = Bitmap.createBitmap(currentBitmap, cropX, cropY, targetW, targetH)
+            val safeW = targetW.coerceIn(1, curW - cropX)
+            val safeH = targetH.coerceIn(1, curH - cropY)
+
+            val cropped = Bitmap.createBitmap(currentBitmap, cropX, cropY, safeW, safeH)
             if (cropped != currentBitmap) currentBitmap.recycle()
             cropped
         } else {
