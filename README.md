@@ -17,4 +17,4 @@ Geo-cam allows you to click geomap-watermarked photos and save them to your gall
 -> iOS: *You need to self host due to restrictions set by Apple*
 
 > [!NOTE]
-> The app might take some time to save the image as no compression is done; the image is saved as is and so the files are also comparatively bigger in size than pictures clicked by other apps involving heavy compression algorithms. There is a delay which cannot be avoided in some situations, other apps include ads during these delays which is fine, and important for their income, but for those who want to stay away from ads, well this app is an ad-free option for you.
+> The app is optimised for performance and is completely ad-free and is free to use.
