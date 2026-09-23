@@ -79,9 +79,11 @@ class _CuteGridPainter extends CustomPainter {
 
 class _VintageFilmFrameOverlay extends StatelessWidget {
   final String filterName;
+  final bool geocamOn;
 
   const _VintageFilmFrameOverlay({
     required this.filterName,
+    this.geocamOn = false,
   });
 
   @override
@@ -169,27 +171,28 @@ class _VintageFilmFrameOverlay extends StatelessWidget {
               ],
             ),
           ),
-          // Bottom Vintage Markings
-          Positioned(
-            bottom: 10,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'GEOCAM 1:1.8/35mm',
-                style: TextStyle(
-                  color: PastelColors.lavender,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+          // Bottom Vintage Markings (hidden when watermark zone is active)
+          if (!geocamOn)
+            Positioned(
+              bottom: 10,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'GEOCAM 1:1.8/35mm',
+                  style: TextStyle(
+                    color: PastelColors.lavender,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -1609,6 +1612,18 @@ class _CameraPageState extends State<CameraPage>
                                   // Vintage 35mm Film Frame Overlay
                                   _VintageFilmFrameOverlay(
                                     filterName: filter,
+                                    geocamOn: geocamOn,
+                                  ),
+
+                                  // Watermark Area Preview Rectangle (shows area hidden by watermark)
+                                  VintageWatermarkAreaGuide(
+                                    visible: geocamOn,
+                                    location: customLocation?.location ?? _cachedLocationStamp?.location ?? '',
+                                    address: customLocation?.address ?? _cachedLocationStamp?.address ?? '',
+                                    latLng: customLocation?.latLng ?? _cachedLocationStamp?.latLng ?? '',
+                                    dateTime: formatDateTime(),
+                                    previewHeight: viewSize.height,
+                                    previewWidth: viewSize.width,
                                   ),
 
                                   // Focus Reticle Ring
@@ -1632,43 +1647,6 @@ class _CameraPageState extends State<CameraPage>
                                       );
                                     },
                                   ),
-
-                                  // Viewfinder watermark indicator if enabled
-                                  if (geocamOn)
-                                    Positioned(
-                                      bottom: 10,
-                                      right: 12,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.5),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.stars_rounded,
-                                              size: 11,
-                                              color: PastelColors.pink,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'GEOCAM ON',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.6,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
                             );
