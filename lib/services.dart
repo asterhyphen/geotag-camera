@@ -36,10 +36,7 @@ Future<Uint8List> addWatermark({
       [0.0, 0.25, 1.0],
     );
 
-  canvas.drawRect(
-    Rect.fromLTWH(0, overlayTop, w, overlayH),
-    overlayPaint,
-  );
+  canvas.drawRect(Rect.fromLTWH(0, overlayTop, w, overlayH), overlayPaint);
 
   // Subtle pastel accent line at the bottom
   final accentPaint = Paint()
@@ -167,22 +164,20 @@ Future<bool> processAndSaveImageNative({
   final stopwatch = Stopwatch()..start();
 
   try {
-    final res = await _mediaChannel.invokeMethod<Map<dynamic, dynamic>>(
-      'processAndSaveImage',
-      {
-        'inputPath': inputPath,
-        'name': name,
-        'filter': filter,
-        'aspectRatio': aspectRatio,
-        'whiteFrame': whiteFrame,
-        'autoRotate': autoRotate,
-        'geocamOn': geocamOn,
-        'location': location,
-        'address': address,
-        'latLng': latLng,
-        'dateTime': dateTime,
-      },
-    );
+    final res = await _mediaChannel
+        .invokeMethod<Map<dynamic, dynamic>>('processAndSaveImage', {
+          'inputPath': inputPath,
+          'name': name,
+          'filter': filter,
+          'aspectRatio': aspectRatio,
+          'whiteFrame': whiteFrame,
+          'autoRotate': autoRotate,
+          'geocamOn': geocamOn,
+          'location': location,
+          'address': address,
+          'latLng': latLng,
+          'dateTime': dateTime,
+        });
     stopwatch.stop();
     debugPrint(
       '[GeoCam Benchmark] Single-pass native process & save completed in ${stopwatch.elapsedMilliseconds}ms',

@@ -38,11 +38,7 @@ class _CuteGridOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(
-        painter: _CuteGridPainter(),
-      ),
-    );
+    return IgnorePointer(child: CustomPaint(painter: _CuteGridPainter()));
   }
 }
 
@@ -93,9 +89,7 @@ class _VintageFilmFrameOverlay extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Corner ticks & rangefinder reticle
-          CustomPaint(
-            painter: _VintageFramePainter(),
-          ),
+          CustomPaint(painter: _VintageFramePainter()),
           // Top Vintage Markings Bar
           Positioned(
             top: 10,
@@ -108,7 +102,10 @@ class _VintageFilmFrameOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(6),
@@ -149,7 +146,10 @@ class _VintageFilmFrameOverlay extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2.5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(6),
@@ -213,20 +213,52 @@ class _VintageFramePainter extends CustomPainter {
     const inset = 14.0;
 
     // Top-left
-    canvas.drawLine(const Offset(inset, inset), const Offset(inset + cornerLen, inset), paint);
-    canvas.drawLine(const Offset(inset, inset), const Offset(inset, inset + cornerLen), paint);
+    canvas.drawLine(
+      const Offset(inset, inset),
+      const Offset(inset + cornerLen, inset),
+      paint,
+    );
+    canvas.drawLine(
+      const Offset(inset, inset),
+      const Offset(inset, inset + cornerLen),
+      paint,
+    );
 
     // Top-right
-    canvas.drawLine(Offset(w - inset, inset), Offset(w - inset - cornerLen, inset), paint);
-    canvas.drawLine(Offset(w - inset, inset), Offset(w - inset, inset + cornerLen), paint);
+    canvas.drawLine(
+      Offset(w - inset, inset),
+      Offset(w - inset - cornerLen, inset),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(w - inset, inset),
+      Offset(w - inset, inset + cornerLen),
+      paint,
+    );
 
     // Bottom-left
-    canvas.drawLine(Offset(inset, h - inset), Offset(inset + cornerLen, h - inset), paint);
-    canvas.drawLine(Offset(inset, h - inset), Offset(inset, h - inset - cornerLen), paint);
+    canvas.drawLine(
+      Offset(inset, h - inset),
+      Offset(inset + cornerLen, h - inset),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(inset, h - inset),
+      Offset(inset, h - inset - cornerLen),
+      paint,
+    );
 
     // Bottom-right
-    canvas.drawLine(Offset(w - inset, h - inset), Offset(w - inset - cornerLen, h - inset), paint);
-    canvas.drawLine(Offset(w - inset, h - inset), Offset(w - inset, h - inset - cornerLen), paint);
+    canvas.drawLine(
+      Offset(w - inset, h - inset),
+      Offset(w - inset - cornerLen, h - inset),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(w - inset, h - inset),
+      Offset(w - inset, h - inset - cornerLen),
+      paint,
+    );
 
     // Center crosshair
     final centerPaint = Paint()
@@ -237,16 +269,23 @@ class _VintageFramePainter extends CustomPainter {
     final cx = w / 2;
     final cy = h / 2;
     const crossLen = 6.0;
-    canvas.drawLine(Offset(cx - crossLen, cy), Offset(cx + crossLen, cy), centerPaint);
-    canvas.drawLine(Offset(cx, cy - crossLen), Offset(cx, cy + crossLen), centerPaint);
+    canvas.drawLine(
+      Offset(cx - crossLen, cy),
+      Offset(cx + crossLen, cy),
+      centerPaint,
+    );
+    canvas.drawLine(
+      Offset(cx, cy - crossLen),
+      Offset(cx, cy + crossLen),
+      centerPaint,
+    );
   }
 
   @override
   bool shouldRepaint(_) => false;
 }
 
-class _CameraPageState extends State<CameraPage>
-    with TickerProviderStateMixin {
+class _CameraPageState extends State<CameraPage> with TickerProviderStateMixin {
   late CameraController controller;
   bool ready = false;
   bool processing = false;
@@ -351,14 +390,21 @@ class _CameraPageState extends State<CameraPage>
       final region = p?.administrativeArea ?? '';
       final country = p?.country ?? '';
 
-      final locationParts = [city, region, country].where((s) => s.isNotEmpty).toList();
+      final locationParts = [
+        city,
+        region,
+        country,
+      ].where((s) => s.isNotEmpty).toList();
       final locationStr = locationParts.isNotEmpty
           ? locationParts.join(', ')
           : "Lat ${pos.latitude.toStringAsFixed(4)}, Long ${pos.longitude.toStringAsFixed(4)}";
 
       final street = p?.street ?? '';
       final subLocality = p?.subLocality ?? '';
-      final addressParts = [street, subLocality].where((s) => s.isNotEmpty).toList();
+      final addressParts = [
+        street,
+        subLocality,
+      ].where((s) => s.isNotEmpty).toList();
       final addressStr = addressParts.join(', ');
 
       final stamp = _LocationStamp(
@@ -376,7 +422,8 @@ class _CameraPageState extends State<CameraPage>
       }
     } catch (_) {
       final fallbackStamp = _LocationStamp(
-        location: "Lat ${pos.latitude.toStringAsFixed(4)}, Long ${pos.longitude.toStringAsFixed(4)}",
+        location:
+            "Lat ${pos.latitude.toStringAsFixed(4)}, Long ${pos.longitude.toStringAsFixed(4)}",
         address: "",
         latLng:
             "Lat ${pos.latitude.toStringAsFixed(6)}, "
@@ -548,7 +595,11 @@ class _CameraPageState extends State<CameraPage>
         cameras[cameraIndex].lensDirection == CameraLensDirection.back;
     if (!isRearCamera) {
       if (!mounted) return;
-      _showAlert('Flashlight is only available on the rear camera', variant: VintageAlertVariant.warning, icon: Icons.flashlight_off_rounded);
+      _showAlert(
+        'Flashlight is only available on the rear camera',
+        variant: VintageAlertVariant.warning,
+        icon: Icons.flashlight_off_rounded,
+      );
       return;
     }
 
@@ -570,7 +621,11 @@ class _CameraPageState extends State<CameraPage>
         torchOn = false;
         torchSupported = false;
       });
-      _showAlert('This camera does not support flashlight control', variant: VintageAlertVariant.warning, icon: Icons.warning_amber_rounded);
+      _showAlert(
+        'This camera does not support flashlight control',
+        variant: VintageAlertVariant.warning,
+        icon: Icons.warning_amber_rounded,
+      );
     }
   }
 
@@ -580,12 +635,7 @@ class _CameraPageState extends State<CameraPage>
     IconData? icon,
   }) {
     if (!mounted) return;
-    showVintageAlert(
-      context,
-      message: message,
-      variant: variant,
-      icon: icon,
-    );
+    showVintageAlert(context, message: message, variant: variant, icon: icon);
   }
 
   Future<void> capture() async {
@@ -608,13 +658,10 @@ class _CameraPageState extends State<CameraPage>
       );
 
       // Instant 0ms location retrieval from cached memory
-      final locationStamp = customLocation ??
+      final locationStamp =
+          customLocation ??
           _cachedLocationStamp ??
-          const _LocationStamp(
-            location: '',
-            address: '',
-            latLng: '',
-          );
+          const _LocationStamp(location: '', address: '', latLng: '');
 
       final dateTime = formatDateTime();
 
@@ -648,7 +695,11 @@ class _CameraPageState extends State<CameraPage>
         );
 
         if (success) {
-          _showAlert('Photo saved to gallery', variant: VintageAlertVariant.success, icon: Icons.photo_library_rounded);
+          _showAlert(
+            'Photo saved to gallery',
+            variant: VintageAlertVariant.success,
+            icon: Icons.photo_library_rounded,
+          );
         } else {
           // Fallback to Dart pipeline if native failed
           try {
@@ -672,10 +723,17 @@ class _CameraPageState extends State<CameraPage>
               );
             }
             await saveToGallery(finalImage);
-            _showAlert('Photo saved to gallery', variant: VintageAlertVariant.success, icon: Icons.photo_library_rounded);
+            _showAlert(
+              'Photo saved to gallery',
+              variant: VintageAlertVariant.success,
+              icon: Icons.photo_library_rounded,
+            );
           } catch (e) {
             debugPrint('[GeoCam Fallback Error] $e');
-            _showAlert('Failed to save photo: $e', variant: VintageAlertVariant.error);
+            _showAlert(
+              'Failed to save photo: $e',
+              variant: VintageAlertVariant.error,
+            );
           }
         }
 
@@ -731,7 +789,8 @@ class _CameraPageState extends State<CameraPage>
 
                 if (query.isEmpty) {
                   setModalState(() {
-                    statusText = 'Please enter a City or Address first to detect coordinates!';
+                    statusText =
+                        'Please enter a City or Address first to detect coordinates!';
                     isSuccess = false;
                   });
                   return;
@@ -764,8 +823,14 @@ class _CameraPageState extends State<CameraPage>
                   final currentPos = _cachedLocationStamp != null
                       ? null
                       : await Geolocator.getLastKnownPosition();
-                  final lat = _extractCoordinate(_cachedLocationStamp?.latLng, 'Lat');
-                  final lng = _extractCoordinate(_cachedLocationStamp?.latLng, 'Long');
+                  final lat = _extractCoordinate(
+                    _cachedLocationStamp?.latLng,
+                    'Lat',
+                  );
+                  final lng = _extractCoordinate(
+                    _cachedLocationStamp?.latLng,
+                    'Long',
+                  );
 
                   if (lat.isNotEmpty && lng.isNotEmpty) {
                     latController.text = lat;
@@ -778,7 +843,9 @@ class _CameraPageState extends State<CameraPage>
                     return;
                   } else if (currentPos != null) {
                     latController.text = currentPos.latitude.toStringAsFixed(6);
-                    lngController.text = currentPos.longitude.toStringAsFixed(6);
+                    lngController.text = currentPos.longitude.toStringAsFixed(
+                      6,
+                    );
                     setModalState(() {
                       isDetecting = false;
                       statusText = 'Filled with your current GPS coordinates';
@@ -790,7 +857,8 @@ class _CameraPageState extends State<CameraPage>
 
                 setModalState(() {
                   isDetecting = false;
-                  statusText = 'Could not find coordinates for this location. You can enter them manually.';
+                  statusText =
+                      'Could not find coordinates for this location. You can enter them manually.';
                   isSuccess = false;
                 });
               }
@@ -864,17 +932,23 @@ class _CameraPageState extends State<CameraPage>
                           children: [
                             Expanded(
                               child: BouncyTap(
-                                onTap: isDetecting ? null : autoDetectCoordinates,
+                                onTap: isDetecting
+                                    ? null
+                                    : autoDetectCoordinates,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 9,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: PastelColors.lavender.withValues(alpha: 0.15),
+                                    color: PastelColors.lavender.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: PastelColors.lavender.withValues(alpha: 0.35),
+                                      color: PastelColors.lavender.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       width: 1,
                                     ),
                                   ),
@@ -887,9 +961,10 @@ class _CameraPageState extends State<CameraPage>
                                           height: 14,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              PastelColors.lavender,
-                                            ),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  PastelColors.lavender,
+                                                ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -947,7 +1022,9 @@ class _CameraPageState extends State<CameraPage>
                           Text(
                             statusText!,
                             style: TextStyle(
-                              color: isSuccess ? PastelColors.mint : PastelColors.pinkDeep,
+                              color: isSuccess
+                                  ? PastelColors.mint
+                                  : PastelColors.pinkDeep,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -996,7 +1073,8 @@ class _CameraPageState extends State<CameraPage>
                                 const SizedBox(width: 6),
                                 BouncyTap(
                                   onTap: () async {
-                                    var location = locationController.text.trim();
+                                    var location = locationController.text
+                                        .trim();
                                     var address = addressController.text.trim();
                                     var latStr = latController.text.trim();
                                     var lngStr = lngController.text.trim();
@@ -1004,7 +1082,8 @@ class _CameraPageState extends State<CameraPage>
                                     // If empty, auto-fill from cached or current GPS
                                     if (location.isEmpty && address.isEmpty) {
                                       setModalState(() {
-                                        statusText = 'Please provide a location name or address!';
+                                        statusText =
+                                            'Please provide a location name or address!';
                                         isSuccess = false;
                                       });
                                       return;
@@ -1015,9 +1094,14 @@ class _CameraPageState extends State<CameraPage>
 
                                     // If coordinates missing, attempt quick lookup or fallback to cached GPS
                                     if (latitude == null || longitude == null) {
-                                      final query = [address, location].where((s) => s.isNotEmpty).join(', ');
+                                      final query = [
+                                        address,
+                                        location,
+                                      ].where((s) => s.isNotEmpty).join(', ');
                                       try {
-                                        final locs = await locationFromAddress(query);
+                                        final locs = await locationFromAddress(
+                                          query,
+                                        );
                                         if (locs.isNotEmpty) {
                                           latitude = locs.first.latitude;
                                           longitude = locs.first.longitude;
@@ -1027,9 +1111,20 @@ class _CameraPageState extends State<CameraPage>
 
                                     // Fallback to cached device GPS if available
                                     if (latitude == null || longitude == null) {
-                                      final latCached = double.tryParse(_extractCoordinate(_cachedLocationStamp?.latLng, 'Lat'));
-                                      final lngCached = double.tryParse(_extractCoordinate(_cachedLocationStamp?.latLng, 'Long'));
-                                      if (latCached != null && lngCached != null) {
+                                      final latCached = double.tryParse(
+                                        _extractCoordinate(
+                                          _cachedLocationStamp?.latLng,
+                                          'Lat',
+                                        ),
+                                      );
+                                      final lngCached = double.tryParse(
+                                        _extractCoordinate(
+                                          _cachedLocationStamp?.latLng,
+                                          'Long',
+                                        ),
+                                      );
+                                      if (latCached != null &&
+                                          lngCached != null) {
                                         latitude = latCached;
                                         longitude = lngCached;
                                       } else {
@@ -1038,13 +1133,16 @@ class _CameraPageState extends State<CameraPage>
                                       }
                                     }
 
-                                    final latLngStr = (latitude != 0.0 || longitude != 0.0)
+                                    final latLngStr =
+                                        (latitude != 0.0 || longitude != 0.0)
                                         ? "Lat ${latitude.toStringAsFixed(6)}, Long ${longitude.toStringAsFixed(6)}"
                                         : "";
 
                                     Navigator.of(context).pop(
                                       _LocationStamp(
-                                        location: location.isNotEmpty ? location : address,
+                                        location: location.isNotEmpty
+                                            ? location
+                                            : address,
                                         address: address,
                                         latLng: latLngStr,
                                       ),
@@ -1060,8 +1158,9 @@ class _CameraPageState extends State<CameraPage>
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: PastelColors.pink
-                                              .withValues(alpha: 0.4),
+                                          color: PastelColors.pink.withValues(
+                                            alpha: 0.4,
+                                          ),
                                           blurRadius: 10,
                                           offset: const Offset(0, 3),
                                         ),
@@ -1095,8 +1194,9 @@ class _CameraPageState extends State<CameraPage>
 
       HapticFeedback.selectionClick();
       setState(() {
-        customLocation =
-            pickedLocation.location.isEmpty ? null : pickedLocation;
+        customLocation = pickedLocation.location.isEmpty
+            ? null
+            : pickedLocation;
       });
     } finally {
       locationController.dispose();
@@ -1116,15 +1216,9 @@ class _CameraPageState extends State<CameraPage>
     return TextField(
       controller: controller,
       keyboardType: isNumeric
-          ? const TextInputType.numberWithOptions(
-              signed: true,
-              decimal: true,
-            )
+          ? const TextInputType.numberWithOptions(signed: true, decimal: true)
           : TextInputType.text,
-      style: const TextStyle(
-        color: PastelColors.textLight,
-        fontSize: 13,
-      ),
+      style: const TextStyle(color: PastelColors.textLight, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -1133,14 +1227,8 @@ class _CameraPageState extends State<CameraPage>
             : null,
         filled: true,
         fillColor: PastelColors.cardDark.withValues(alpha: 0.8),
-        hintStyle: const TextStyle(
-          color: PastelColors.textMuted,
-          fontSize: 12,
-        ),
-        labelStyle: const TextStyle(
-          color: PastelColors.lavender,
-          fontSize: 12,
-        ),
+        hintStyle: const TextStyle(color: PastelColors.textMuted, fontSize: 12),
+        labelStyle: const TextStyle(color: PastelColors.lavender, fontSize: 12),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 12,
@@ -1152,10 +1240,7 @@ class _CameraPageState extends State<CameraPage>
           borderRadius: BorderRadius.circular(16),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(
-            color: PastelColors.pink,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: PastelColors.pink, width: 1.5),
           borderRadius: BorderRadius.circular(16),
         ),
       ),
@@ -1180,11 +1265,36 @@ class _CameraPageState extends State<CameraPage>
       backgroundColor: Colors.transparent,
       builder: (context) {
         final ratios = [
-          {'label': '3:4', 'sub': 'Portrait', 'ratio': 3 / 4, 'icon': Icons.crop_portrait_rounded},
-          {'label': '1:1', 'sub': 'Square', 'ratio': 1.0, 'icon': Icons.crop_square_rounded},
-          {'label': '9:16', 'sub': 'Full', 'ratio': 9 / 16, 'icon': Icons.stay_current_portrait_rounded},
-          {'label': '4:3', 'sub': 'Classic', 'ratio': 4 / 3, 'icon': Icons.crop_landscape_rounded},
-          {'label': '16:9', 'sub': 'Cinema', 'ratio': 16 / 9, 'icon': Icons.crop_16_9_rounded},
+          {
+            'label': '3:4',
+            'sub': 'Portrait',
+            'ratio': 3 / 4,
+            'icon': Icons.crop_portrait_rounded,
+          },
+          {
+            'label': '1:1',
+            'sub': 'Square',
+            'ratio': 1.0,
+            'icon': Icons.crop_square_rounded,
+          },
+          {
+            'label': '9:16',
+            'sub': 'Full',
+            'ratio': 9 / 16,
+            'icon': Icons.stay_current_portrait_rounded,
+          },
+          {
+            'label': '4:3',
+            'sub': 'Classic',
+            'ratio': 4 / 3,
+            'icon': Icons.crop_landscape_rounded,
+          },
+          {
+            'label': '16:9',
+            'sub': 'Cinema',
+            'ratio': 16 / 9,
+            'icon': Icons.crop_16_9_rounded,
+          },
         ];
 
         return Container(
@@ -1376,7 +1486,10 @@ class _CameraPageState extends State<CameraPage>
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: PastelColors.surfaceDark.withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(30),
@@ -1410,7 +1523,9 @@ class _CameraPageState extends State<CameraPage>
                       tooltip: 'Exposure / Brightness',
                       onPressed: () {
                         HapticFeedback.selectionClick();
-                        setState(() => showExposureSlider = !showExposureSlider);
+                        setState(
+                          () => showExposureSlider = !showExposureSlider,
+                        );
                       },
                     ),
 
@@ -1435,7 +1550,9 @@ class _CameraPageState extends State<CameraPage>
                           : Icons.filter_frames_outlined,
                       isActive: whiteFrame,
                       activeColor: PastelColors.pink,
-                      tooltip: whiteFrame ? 'White Frame On' : 'White Frame Off',
+                      tooltip: whiteFrame
+                          ? 'White Frame On'
+                          : 'White Frame Off',
                       onPressed: () {
                         HapticFeedback.selectionClick();
                         setState(() => whiteFrame = !whiteFrame);
@@ -1487,14 +1604,14 @@ class _CameraPageState extends State<CameraPage>
                       icon: customLocation != null
                           ? Icons.edit_location_alt_rounded
                           : (_cachedLocationStamp != null
-                              ? Icons.location_on_rounded
-                              : Icons.gps_fixed_rounded),
+                                ? Icons.location_on_rounded
+                                : Icons.gps_fixed_rounded),
                       label: customLocation != null
                           ? customLocation!.location
                           : (_cachedLocationStamp != null &&
-                                  _cachedLocationStamp!.location.isNotEmpty
-                              ? _cachedLocationStamp!.location
-                              : 'GPS Auto'),
+                                    _cachedLocationStamp!.location.isNotEmpty
+                                ? _cachedLocationStamp!.location
+                                : 'GPS Auto'),
                       color: customLocation != null
                           ? PastelColors.peachDeep
                           : PastelColors.mint,
@@ -1510,11 +1627,16 @@ class _CameraPageState extends State<CameraPage>
                       // Exposure EV Badge (Quick toggle)
                       CuteBadge(
                         icon: Icons.wb_sunny_rounded,
-                        label: '${exposureOffset >= 0 ? '+' : ''}${exposureOffset.toStringAsFixed(1)} EV',
-                        color: showExposureSlider ? PastelColors.butter : PastelColors.lavender,
+                        label:
+                            '${exposureOffset >= 0 ? '+' : ''}${exposureOffset.toStringAsFixed(1)} EV',
+                        color: showExposureSlider
+                            ? PastelColors.butter
+                            : PastelColors.lavender,
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          setState(() => showExposureSlider = !showExposureSlider);
+                          setState(
+                            () => showExposureSlider = !showExposureSlider,
+                          );
                         },
                       ),
                       const SizedBox(width: 6),
@@ -1588,7 +1710,8 @@ class _CameraPageState extends State<CameraPage>
 
                             return GestureDetector(
                               onDoubleTap: _switchCamera,
-                              onTapUp: (details) => _onTapToFocus(details, viewSize),
+                              onTapUp: (details) =>
+                                  _onTapToFocus(details, viewSize),
                               onScaleStart: (_) {
                                 _pinchStartZoom = zoom;
                               },
@@ -1597,9 +1720,9 @@ class _CameraPageState extends State<CameraPage>
                                     1 + ((details.scale - 1) * 0.3);
                                 final newZoom =
                                     (_pinchStartZoom * adjustedScale).clamp(
-                                  minZoom,
-                                  maxZoom,
-                                );
+                                      minZoom,
+                                      maxZoom,
+                                    );
                                 controller.setZoomLevel(newZoom);
                                 setState(() => zoom = newZoom);
                               },
@@ -1618,9 +1741,18 @@ class _CameraPageState extends State<CameraPage>
                                   // Watermark Area Preview Rectangle (shows area hidden by watermark)
                                   VintageWatermarkAreaGuide(
                                     visible: geocamOn,
-                                    location: customLocation?.location ?? _cachedLocationStamp?.location ?? '',
-                                    address: customLocation?.address ?? _cachedLocationStamp?.address ?? '',
-                                    latLng: customLocation?.latLng ?? _cachedLocationStamp?.latLng ?? '',
+                                    location:
+                                        customLocation?.location ??
+                                        _cachedLocationStamp?.location ??
+                                        '',
+                                    address:
+                                        customLocation?.address ??
+                                        _cachedLocationStamp?.address ??
+                                        '',
+                                    latLng:
+                                        customLocation?.latLng ??
+                                        _cachedLocationStamp?.latLng ??
+                                        '',
                                     dateTime: formatDateTime(),
                                     previewHeight: viewSize.height,
                                     previewWidth: viewSize.width,
@@ -1641,9 +1773,10 @@ class _CameraPageState extends State<CameraPage>
                                         return const SizedBox.shrink();
                                       }
                                       return Container(
-                                        color: PastelColors.pinkLight.withValues(
-                                          alpha: _flashAnim.value * 0.85,
-                                        ),
+                                        color: PastelColors.pinkLight
+                                            .withValues(
+                                              alpha: _flashAnim.value * 0.85,
+                                            ),
                                       );
                                     },
                                   ),

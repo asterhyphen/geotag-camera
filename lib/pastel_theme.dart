@@ -63,22 +63,22 @@ class PastelColors {
 
 class PastelShadows {
   static List<BoxShadow> soft({Color color = const Color(0x2A000000)}) => [
-        BoxShadow(
-          color: color,
-          blurRadius: 16,
-          spreadRadius: 0,
-          offset: const Offset(0, 6),
-        ),
-      ];
+    BoxShadow(
+      color: color,
+      blurRadius: 16,
+      spreadRadius: 0,
+      offset: const Offset(0, 6),
+    ),
+  ];
 
   static List<BoxShadow> glow(Color color) => [
-        BoxShadow(
-          color: color.withValues(alpha: 0.45),
-          blurRadius: 18,
-          spreadRadius: 2,
-          offset: const Offset(0, 2),
-        ),
-      ];
+    BoxShadow(
+      color: color.withValues(alpha: 0.45),
+      blurRadius: 18,
+      spreadRadius: 2,
+      offset: const Offset(0, 2),
+    ),
+  ];
 }
 
 /// A playful, tactile bouncing widget on tap
@@ -117,14 +117,13 @@ class _BouncyTapState extends State<BouncyTap>
       duration: widget.duration,
       reverseDuration: const Duration(milliseconds: 140),
     );
-    _scaleAnim = Tween<double>(
-      begin: 1.0,
-      end: widget.scaleDown,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.elasticOut,
-    ));
+    _scaleAnim = Tween<double>(begin: 1.0, end: widget.scaleDown).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.elasticOut,
+      ),
+    );
   }
 
   @override
@@ -163,10 +162,8 @@ class _BouncyTapState extends State<BouncyTap>
       },
       child: AnimatedBuilder(
         animation: _scaleAnim,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnim.value,
-          child: child,
-        ),
+        builder: (context, child) =>
+            Transform.scale(scale: _scaleAnim.value, child: child),
         child: widget.child,
       ),
     );

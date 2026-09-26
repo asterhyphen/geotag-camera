@@ -47,7 +47,9 @@ class CuteIconButton extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: isActive ? effectiveActiveBg : PastelColors.cardDark.withValues(alpha: 0.65),
+              color: isActive
+                  ? effectiveActiveBg
+                  : PastelColors.cardDark.withValues(alpha: 0.65),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive
@@ -61,14 +63,14 @@ class CuteIconButton extends StatelessWidget {
                         color: activeColor.withValues(alpha: 0.35),
                         blurRadius: 12,
                         spreadRadius: 1,
-                      )
+                      ),
                     ]
                   : [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
-                      )
+                      ),
                     ],
             ),
             child: Icon(
@@ -77,12 +79,7 @@ class CuteIconButton extends StatelessWidget {
               color: isActive ? activeColor : inactiveColor,
             ),
           ),
-          if (badge != null)
-            Positioned(
-              top: -2,
-              right: -2,
-              child: badge!,
-            ),
+          if (badge != null) Positioned(top: -2, right: -2, child: badge!),
         ],
       ),
     );
@@ -118,10 +115,7 @@ class CuteBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withValues(alpha: 0.45),
-          width: 1.2,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.45), width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -144,10 +138,7 @@ class CuteBadge extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return BouncyTap(
-        onTap: onTap,
-        child: badgeWidget,
-      );
+      return BouncyTap(onTap: onTap, child: badgeWidget);
     }
     return badgeWidget;
   }
@@ -225,11 +216,7 @@ void showVintageAlert(
                 color: accentColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon ?? defaultIcon,
-                size: 16,
-                color: accentColor,
-              ),
+              child: Icon(icon ?? defaultIcon, size: 16, color: accentColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -388,7 +375,9 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                                   color: Colors.white.withValues(alpha: 0.9),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.white.withValues(alpha: 0.6),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       blurRadius: 6,
                                     ),
                                   ],
@@ -527,8 +516,9 @@ class CuteFilterSelector extends StatelessWidget {
                             ? PastelColors.textDark
                             : PastelColors.textMuted,
                         fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ],
@@ -580,7 +570,8 @@ class CuteZoomBar extends StatelessWidget {
         children: [
           // Zoom out (-)
           BouncyTap(
-            onTap: () => onZoomChanged((currentZoom - 0.1).clamp(minZoom, maxZoom)),
+            onTap: () =>
+                onZoomChanged((currentZoom - 0.1).clamp(minZoom, maxZoom)),
             onLongPress: onStartContinuousOut,
             onLongPressUp: onStopContinuous,
             child: Container(
@@ -614,7 +605,8 @@ class CuteZoomBar extends StatelessWidget {
 
           // Zoom in (+)
           BouncyTap(
-            onTap: () => onZoomChanged((currentZoom + 0.1).clamp(minZoom, maxZoom)),
+            onTap: () =>
+                onZoomChanged((currentZoom + 0.1).clamp(minZoom, maxZoom)),
             onLongPress: onStartContinuousIn,
             onLongPressUp: onStopContinuous,
             child: Container(
@@ -771,7 +763,9 @@ class VintageExposureSlider extends StatelessWidget {
           color: PastelColors.butter.withValues(alpha: 0.35),
           width: 1.2,
         ),
-        boxShadow: PastelShadows.soft(color: PastelColors.butter.withValues(alpha: 0.15)),
+        boxShadow: PastelShadows.soft(
+          color: PastelColors.butter.withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         children: [
@@ -794,7 +788,9 @@ class VintageExposureSlider extends StatelessWidget {
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: PastelColors.butter,
-                inactiveTrackColor: PastelColors.lavender.withValues(alpha: 0.25),
+                inactiveTrackColor: PastelColors.lavender.withValues(
+                  alpha: 0.25,
+                ),
                 thumbColor: PastelColors.butter,
                 overlayColor: PastelColors.butter.withValues(alpha: 0.2),
                 trackHeight: 3.0,
@@ -885,16 +881,17 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Dashed guide boundary line & corner markers along the top of the watermark zone
-                CustomPaint(
-                  painter: _WatermarkBorderPainter(),
-                ),
+                CustomPaint(painter: _WatermarkBorderPainter()),
 
                 // Top indicator tag badge
                 Positioned(
                   top: 4,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(6),
@@ -1060,11 +1057,18 @@ class _WatermarkBorderPainter extends CustomPainter {
     canvas.drawLine(const Offset(0, 0), const Offset(0, tickLen), cornerPaint);
 
     // Top-right tick
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - tickLen, 0), cornerPaint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, tickLen), cornerPaint);
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(size.width - tickLen, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(size.width, tickLen),
+      cornerPaint,
+    );
   }
 
   @override
   bool shouldRepaint(_) => false;
 }
-
