@@ -6,11 +6,7 @@ class CuteGridOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(
-        painter: CuteGridPainter(),
-      ),
-    );
+    return IgnorePointer(child: CustomPaint(painter: CuteGridPainter()));
   }
 }
 

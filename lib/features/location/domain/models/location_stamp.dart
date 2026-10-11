@@ -9,20 +9,12 @@ class LocationStamp {
     required this.latLng,
   });
 
-  static const empty = LocationStamp(
-    location: '',
-    address: '',
-    latLng: '',
-  );
+  static const empty = LocationStamp(location: '', address: '', latLng: '');
 
   bool get isEmpty => location.isEmpty && address.isEmpty && latLng.isEmpty;
   bool get isNotEmpty => !isEmpty;
 
-  LocationStamp copyWith({
-    String? location,
-    String? address,
-    String? latLng,
-  }) {
+  LocationStamp copyWith({String? location, String? address, String? latLng}) {
     return LocationStamp(
       location: location ?? this.location,
       address: address ?? this.address,

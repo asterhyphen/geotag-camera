@@ -214,8 +214,8 @@ Future<LocationStamp?> showLocationPickerDialog(
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                            PastelColors.lavender,
-                                          ),
+                                                PastelColors.lavender,
+                                              ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -290,9 +290,8 @@ Future<LocationStamp?> showLocationPickerDialog(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           TextButton.icon(
-                            onPressed: () => Navigator.of(context).pop(
-                              LocationStamp.empty,
-                            ),
+                            onPressed: () =>
+                                Navigator.of(context).pop(LocationStamp.empty),
                             icon: const Icon(
                               Icons.gps_fixed_rounded,
                               size: 16,
@@ -320,8 +319,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                               const SizedBox(width: 6),
                               BouncyTap(
                                 onTap: () async {
-                                  var location =
-                                      locationController.text.trim();
+                                  var location = locationController.text.trim();
                                   var address = addressController.text.trim();
                                   var latStr = latController.text.trim();
                                   var lngStr = lngController.text.trim();
@@ -346,8 +344,9 @@ Future<LocationStamp?> showLocationPickerDialog(
                                       location,
                                     ].where((s) => s.isNotEmpty).join(', ');
                                     try {
-                                      final locs =
-                                          await locationFromAddress(query);
+                                      final locs = await locationFromAddress(
+                                        query,
+                                      );
                                       if (locs.isNotEmpty) {
                                         latitude = locs.first.latitude;
                                         longitude = locs.first.longitude;
@@ -379,8 +378,8 @@ Future<LocationStamp?> showLocationPickerDialog(
                                     }
                                   }
 
-                                  final latLngStr = (latitude != 0.0 ||
-                                          longitude != 0.0)
+                                  final latLngStr =
+                                      (latitude != 0.0 || longitude != 0.0)
                                       ? "Lat ${latitude.toStringAsFixed(6)}, Long ${longitude.toStringAsFixed(6)}"
                                       : "";
 
@@ -468,10 +467,7 @@ Widget _buildCuteTextField({
       fillColor: PastelColors.cardDark.withValues(alpha: 0.8),
       hintStyle: const TextStyle(color: PastelColors.textMuted, fontSize: 12),
       labelStyle: const TextStyle(color: PastelColors.lavender, fontSize: 12),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 12,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
           color: PastelColors.lavender.withValues(alpha: 0.25),

@@ -38,10 +38,7 @@ class TopControlBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 6,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: PastelColors.surfaceDark.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(30),

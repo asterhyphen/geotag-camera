@@ -42,14 +42,14 @@ class StatusRibbon extends StatelessWidget {
               icon: customLocation != null
                   ? Icons.edit_location_alt_rounded
                   : (cachedLocationStamp != null
-                      ? Icons.location_on_rounded
-                      : Icons.gps_fixed_rounded),
+                        ? Icons.location_on_rounded
+                        : Icons.gps_fixed_rounded),
               label: customLocation != null
                   ? customLocation!.location
                   : (cachedLocationStamp != null &&
-                          cachedLocationStamp!.location.isNotEmpty
-                      ? cachedLocationStamp!.location
-                      : 'GPS Auto'),
+                            cachedLocationStamp!.location.isNotEmpty
+                        ? cachedLocationStamp!.location
+                        : 'GPS Auto'),
               color: customLocation != null
                   ? PastelColors.peachDeep
                   : PastelColors.mint,

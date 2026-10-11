@@ -53,9 +53,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Dashed guide boundary line & corner markers along the top of the watermark zone
-                CustomPaint(
-                  painter: _WatermarkBorderPainter(),
-                ),
+                CustomPaint(painter: _WatermarkBorderPainter()),
 
                 // Top indicator tag badge
                 Positioned(

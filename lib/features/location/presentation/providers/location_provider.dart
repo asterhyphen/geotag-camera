@@ -28,7 +28,9 @@ class LocationState {
   }) {
     return LocationState(
       cachedLocationStamp: cachedLocationStamp ?? this.cachedLocationStamp,
-      customLocation: clearCustom ? null : (customLocation ?? this.customLocation),
+      customLocation: clearCustom
+          ? null
+          : (customLocation ?? this.customLocation),
       isPermissionGranted: isPermissionGranted ?? this.isPermissionGranted,
       isLoading: isLoading ?? this.isLoading,
     );
@@ -39,10 +41,9 @@ class LocationNotifier extends StateNotifier<LocationState> {
   final LocationService _locationService;
   StreamSubscription<LocationStamp>? _positionSub;
 
-  LocationNotifier({
-    LocationService locationService = const LocationService(),
-  })  : _locationService = locationService,
-        super(const LocationState()) {
+  LocationNotifier({LocationService locationService = const LocationService()})
+    : _locationService = locationService,
+      super(const LocationState()) {
     init();
   }
 
@@ -58,21 +59,21 @@ class LocationNotifier extends StateNotifier<LocationState> {
     // 1. Warm up from last known immediately (0ms)
     final lastKnown = await _locationService.getLastKnownLocation();
     if (lastKnown != null) {
-      state = state.copyWith(
-        cachedLocationStamp: lastKnown,
-        isLoading: false,
-      );
+      state = state.copyWith(cachedLocationStamp: lastKnown, isLoading: false);
     }
 
     // 2. Query current position asynchronously
-    _locationService.getCurrentLocation().then((current) {
-      if (current != null) {
-        state = state.copyWith(
-          cachedLocationStamp: current,
-          isLoading: false,
-        );
-      }
-    }).catchError((_) {});
+    _locationService
+        .getCurrentLocation()
+        .then((current) {
+          if (current != null) {
+            state = state.copyWith(
+              cachedLocationStamp: current,
+              isLoading: false,
+            );
+          }
+        })
+        .catchError((_) {});
 
     // 3. Keep updating from stream
     _positionSub?.cancel();
@@ -104,8 +105,9 @@ final locationServiceProvider = Provider<LocationService>((ref) {
   return const LocationService();
 });
 
-final locationProvider =
-    StateNotifierProvider<LocationNotifier, LocationState>((ref) {
-  final service = ref.watch(locationServiceProvider);
-  return LocationNotifier(locationService: service);
-});
+final locationProvider = StateNotifierProvider<LocationNotifier, LocationState>(
+  (ref) {
+    final service = ref.watch(locationServiceProvider);
+    return LocationNotifier(locationService: service);
+  },
+);

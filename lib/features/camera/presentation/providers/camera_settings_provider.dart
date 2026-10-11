@@ -82,5 +82,5 @@ class CameraSettingsNotifier extends StateNotifier<CameraSettingsState> {
 
 final cameraSettingsProvider =
     StateNotifierProvider<CameraSettingsNotifier, CameraSettingsState>((ref) {
-  return CameraSettingsNotifier();
-});
+      return CameraSettingsNotifier();
+    });

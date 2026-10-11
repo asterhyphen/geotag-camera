@@ -18,9 +18,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Corner ticks & rangefinder reticle
-          CustomPaint(
-            painter: VintageFramePainter(),
-          ),
+          CustomPaint(painter: VintageFramePainter()),
           // Top Vintage Markings Bar
           Positioned(
             top: 10,
@@ -108,10 +106,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
               bottom: 10,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(6),

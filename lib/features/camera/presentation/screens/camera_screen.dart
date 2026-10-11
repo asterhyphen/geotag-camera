@@ -477,7 +477,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     final settingsNotifier = ref.read(cameraSettingsProvider.notifier);
     final locationState = ref.watch(locationProvider);
 
-    final isFrontCamera = _cameras.isNotEmpty &&
+    final isFrontCamera =
+        _cameras.isNotEmpty &&
         _cameras[settings.cameraIndex].lensDirection ==
             CameraLensDirection.front;
 

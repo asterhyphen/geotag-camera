@@ -25,9 +25,7 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        availableCamerasProvider.overrideWithValue(cameras),
-      ],
+      overrides: [availableCamerasProvider.overrideWithValue(cameras)],
       child: const MyApp(),
     ),
   );
