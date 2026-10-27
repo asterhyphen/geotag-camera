@@ -50,6 +50,22 @@ Geotag camera apps typically suffer from multi-second shutter freezes due to col
 | **Total Pipeline (Capture $\rightarrow$ Gallery)** | 7,000ms – 14,000ms | **230ms – 350ms** | **~96% overall speedup** |
 | **Memory Overhead** | 3× redundant copies (50–100MB spikes) | **Zero-copy path passing** | **Minimal memory footprint** |
 
+# Resolved Issues & Enhancements
+
+Key issues from the repository tracker addressed in recent releases:
+
+- **[#3] Add titles / toggle alerts (`enhancement`)**
+  - When settings, tools, or toggles are activated (e.g., flashlight, auto-rotate, watermark, frame), themed vintage pastel floating alert toasts (`VintageAlert`) notify the user with clear feedback and icons.
+
+- **[#4] Toggle view, refresh only cam view (`bug`)**
+  - Modularized to Riverpod with localized state listeners. Viewfinder preview frames stay uninterrupted at 60 FPS and only the camera viewport updates when toggling modes, preventing unnecessary screen rebuilds and preview stutter.
+
+- **[#7] Use GPS for custom location returns error (`bug`)**
+  - Resolved manual location entry crashes by adding an **Auto-Detect Lat/Long** button, robust address-to-coordinate geocoding, and resilient fallback to cached device GPS without throwing exceptions.
+
+- **[#17] Beautify view (`enhancement`)**
+  - Reimagined the interface with a vintage film camera look: 35mm film markings (`24A`, `ISO 400`), tactile pastel buttons, animated pulsing shutter aura, tap-to-focus reticle ring, and an accurate dashed watermark preview guide.
+
 # Download 
 -> Android: Download the apk from [asterhyphen.xyz/app/geocam](https://asterhyphen.xyz/app/geocam/) </br>
 -> iOS: *You need to self host due to restrictions set by Apple*
