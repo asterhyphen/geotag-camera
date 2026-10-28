@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
-import 'core/theme/pastel_theme.dart';
+import 'core/theme/app_theme.dart';
 import 'features/camera/presentation/providers/camera_controller_provider.dart';
 
 late List<CameraDescription> cameras;
@@ -17,7 +17,7 @@ Future<void> main() async {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: PastelColors.bgDark,
+      systemNavigationBarColor: AppColors.bgDark,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );

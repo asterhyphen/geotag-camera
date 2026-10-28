@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// A showstopping cute shutter button with pulsing aura, candy colors, and spring feel
-class CuteShutterButton extends StatefulWidget {
+/// Camera shutter button with animated pulse feedback
+class ShutterButton extends StatefulWidget {
   final VoidCallback onTap;
   final bool processing;
   final double size;
 
-  const CuteShutterButton({
+  const ShutterButton({
     super.key,
     required this.onTap,
     required this.processing,
@@ -15,10 +15,10 @@ class CuteShutterButton extends StatefulWidget {
   });
 
   @override
-  State<CuteShutterButton> createState() => _CuteShutterButtonState();
+  State<ShutterButton> createState() => _ShutterButtonState();
 }
 
-class _CuteShutterButtonState extends State<CuteShutterButton>
+class _ShutterButtonState extends State<ShutterButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseCtrl;
 
@@ -63,8 +63,8 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          PastelColors.pink.withValues(alpha: 0.35),
-                          PastelColors.lavender.withValues(alpha: 0.15),
+                          AppColors.pink.withValues(alpha: 0.35),
+                          AppColors.lavender.withValues(alpha: 0.15),
                           Colors.transparent,
                         ],
                         stops: const [0.4, 0.7, 1.0],
@@ -73,7 +73,7 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                   ),
                 ),
 
-                // Frosted pastel outer ring
+                // Outer ring
                 Container(
                   width: widget.size,
                   height: widget.size,
@@ -81,16 +81,16 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
                       colors: [
-                        PastelColors.pink,
-                        PastelColors.lavender,
-                        PastelColors.sky,
+                        AppColors.pink,
+                        AppColors.lavender,
+                        AppColors.sky,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: PastelColors.pink.withValues(alpha: 0.4),
+                        color: AppColors.pink.withValues(alpha: 0.4),
                         blurRadius: 16,
                         spreadRadius: 1,
                         offset: const Offset(0, 3),
@@ -101,7 +101,7 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                   child: Container(
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: PastelColors.surfaceDark,
+                      color: AppColors.surfaceDark,
                     ),
                     padding: const EdgeInsets.all(4),
                     child: Container(
@@ -109,11 +109,11 @@ class _CuteShutterButtonState extends State<CuteShutterButton>
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: widget.processing
-                              ? [PastelColors.lavender, PastelColors.sky]
+                              ? [AppColors.lavender, AppColors.sky]
                               : [
-                                  PastelColors.pink,
-                                  PastelColors.peach,
-                                  PastelColors.butter,
+                                  AppColors.pink,
+                                  AppColors.peach,
+                                  AppColors.butter,
                                 ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,

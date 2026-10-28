@@ -88,7 +88,7 @@ class DartImageService {
 
     canvas.drawRect(Rect.fromLTWH(0, overlayTop, w, overlayH), overlayPaint);
 
-    // Subtle pastel accent line at the bottom
+    // Gradient accent line at the bottom
     final accentPaint = Paint()
       ..shader = ui.Gradient.linear(
         Offset(w * 0.08, h - 6),

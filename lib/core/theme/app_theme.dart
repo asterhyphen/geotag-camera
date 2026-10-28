@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PastelColors {
-  // Soft Pastel Palettes
+class AppColors {
+  // Primary & Accent Palettes
   static const Color pink = Color(0xFFFFB5C5);
   static const Color pinkLight = Color(0xFFFFF0F3);
   static const Color pinkDeep = Color(0xFFF06292);
@@ -61,7 +61,7 @@ class PastelColors {
   );
 }
 
-class PastelShadows {
+class AppShadows {
   static List<BoxShadow> soft({Color color = const Color(0x2A000000)}) => [
     BoxShadow(
       color: color,
@@ -81,7 +81,7 @@ class PastelShadows {
   ];
 }
 
-/// A playful, tactile bouncing widget on tap
+/// A tactile bouncing widget on tap
 class BouncyTap extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;

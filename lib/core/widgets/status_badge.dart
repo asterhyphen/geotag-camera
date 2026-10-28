@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// A delightful mini pill badge for status updates
-class CuteBadge extends StatelessWidget {
+/// A status badge pill for camera and location indicators
+class StatusBadge extends StatelessWidget {
   final String label;
   final IconData? icon;
   final Color color;
   final Color? textColor;
   final VoidCallback? onTap;
 
-  const CuteBadge({
+  const StatusBadge({
     super.key,
     required this.label,
     this.icon,
-    this.color = PastelColors.lavender,
+    this.color = AppColors.lavender,
     this.textColor,
     this.onTap,
   });

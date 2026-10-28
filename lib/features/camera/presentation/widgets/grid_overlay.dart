@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/pastel_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 
-class CuteGridOverlay extends StatelessWidget {
-  const CuteGridOverlay({super.key});
+class GridOverlay extends StatelessWidget {
+  const GridOverlay({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(child: CustomPaint(painter: CuteGridPainter()));
+    return IgnorePointer(child: CustomPaint(painter: GridPainter()));
   }
 }
 
-class CuteGridPainter extends CustomPainter {
+class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = PastelColors.lavender.withValues(alpha: 0.28)
+      ..color = AppColors.lavender.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
     final dotPaint = Paint()
-      ..color = PastelColors.pink.withValues(alpha: 0.6)
+      ..color = AppColors.pink.withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
 
     final w = size.width;
@@ -39,7 +39,7 @@ class CuteGridPainter extends CustomPainter {
     canvas.drawLine(Offset(0, y1), Offset(w, y1), paint);
     canvas.drawLine(Offset(0, y2), Offset(w, y2), paint);
 
-    // Cute dots at intersection points
+    // Dots at intersection points
     const dotRadius = 2.5;
     canvas.drawCircle(Offset(x1, y1), dotRadius, dotPaint);
     canvas.drawCircle(Offset(x2, y1), dotRadius, dotPaint);

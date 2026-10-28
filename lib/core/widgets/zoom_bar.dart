@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// Quick Zoom bar with preset pills and smooth step buttons
-class CuteZoomBar extends StatelessWidget {
+/// Camera zoom control bar with step adjustments and quick presets
+class ZoomBar extends StatelessWidget {
   final double currentZoom;
   final double minZoom;
   final double maxZoom;
@@ -12,7 +12,7 @@ class CuteZoomBar extends StatelessWidget {
   final VoidCallback onStartContinuousOut;
   final VoidCallback onStopContinuous;
 
-  const CuteZoomBar({
+  const ZoomBar({
     super.key,
     required this.currentZoom,
     required this.minZoom,
@@ -28,10 +28,10 @@ class CuteZoomBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: PastelColors.cardDark.withValues(alpha: 0.6),
+        color: AppColors.cardDark.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: PastelColors.lavender.withValues(alpha: 0.18),
+          color: AppColors.lavender.withValues(alpha: 0.18),
           width: 1,
         ),
       ),
@@ -47,20 +47,20 @@ class CuteZoomBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: PastelColors.surfaceDark.withValues(alpha: 0.5),
+                color: AppColors.surfaceDark.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.remove_rounded,
                 size: 15,
-                color: PastelColors.lavender,
+                color: AppColors.lavender,
               ),
             ),
           ),
 
           const SizedBox(width: 8),
 
-          // Zoom pills (e.g. 1.0x, 2.0x, 3.0x if supported)
+          // Zoom presets (1x, 2x, 3x)
           _buildZoomChip(1.0),
           if (maxZoom >= 2.0) ...[
             const SizedBox(width: 6),
@@ -82,13 +82,13 @@ class CuteZoomBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: PastelColors.surfaceDark.withValues(alpha: 0.5),
+                color: AppColors.surfaceDark.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.add_rounded,
                 size: 15,
-                color: PastelColors.pink,
+                color: AppColors.pink,
               ),
             ),
           ),
@@ -109,14 +109,14 @@ class CuteZoomBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: isSelected
-              ? PastelColors.pink.withValues(alpha: 0.9)
+              ? AppColors.pink.withValues(alpha: 0.9)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           '${targetZoom.toStringAsFixed(targetZoom.truncateToDouble() == targetZoom ? 0 : 1)}x',
           style: TextStyle(
-            color: isSelected ? PastelColors.textDark : PastelColors.textLight,
+            color: isSelected ? AppColors.textDark : AppColors.textLight,
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
           ),

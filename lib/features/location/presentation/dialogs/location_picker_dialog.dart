@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../../core/theme/pastel_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/services/location_service.dart';
 import '../../domain/models/location_stamp.dart';
 
@@ -122,32 +122,32 @@ Future<LocationStamp?> showLocationPickerDialog(
               child: Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: PastelColors.surfaceDark,
+                  color: AppColors.surfaceDark,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: PastelColors.pink.withValues(alpha: 0.4),
+                    color: AppColors.pink.withValues(alpha: 0.4),
                     width: 1.5,
                   ),
-                  boxShadow: PastelShadows.soft(
-                    color: PastelColors.pink.withValues(alpha: 0.2),
+                  boxShadow: AppShadows.soft(
+                    color: AppColors.pink.withValues(alpha: 0.2),
                   ),
                 ),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Cute Header
+                      // Header
                       Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: PastelColors.pink.withValues(alpha: 0.2),
+                              color: AppColors.pink.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.place_rounded,
-                              color: PastelColors.pink,
+                              color: AppColors.pink,
                               size: 22,
                             ),
                           ),
@@ -155,7 +155,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                           const Text(
                             'Location Tag',
                             style: TextStyle(
-                              color: PastelColors.textLight,
+                              color: AppColors.textLight,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -164,7 +164,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                       ),
                       const SizedBox(height: 18),
 
-                      _buildCuteTextField(
+                      _buildTextField(
                         controller: locationController,
                         label: 'City & Region',
                         hint: 'Tokyo, Japan',
@@ -172,7 +172,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                       ),
                       const SizedBox(height: 12),
 
-                      _buildCuteTextField(
+                      _buildTextField(
                         controller: addressController,
                         label: 'Address / Landmark',
                         hint: 'Shibuya Crossing',
@@ -192,12 +192,12 @@ Future<LocationStamp?> showLocationPickerDialog(
                                   vertical: 9,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: PastelColors.lavender.withValues(
+                                  color: AppColors.lavender.withValues(
                                     alpha: 0.15,
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: PastelColors.lavender.withValues(
+                                    color: AppColors.lavender.withValues(
                                       alpha: 0.35,
                                     ),
                                     width: 1,
@@ -214,7 +214,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                PastelColors.lavender,
+                                                AppColors.lavender,
                                               ),
                                         ),
                                       ),
@@ -223,14 +223,14 @@ Future<LocationStamp?> showLocationPickerDialog(
                                       const Icon(
                                         Icons.auto_fix_high_rounded,
                                         size: 15,
-                                        color: PastelColors.lavender,
+                                        color: AppColors.lavender,
                                       ),
                                       const SizedBox(width: 6),
                                     ],
                                     const Text(
                                       'Auto-Detect Lat/Long',
                                       style: TextStyle(
-                                        color: PastelColors.lavender,
+                                        color: AppColors.lavender,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -247,7 +247,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                       Row(
                         children: [
                           Expanded(
-                            child: _buildCuteTextField(
+                            child: _buildTextField(
                               controller: latController,
                               label: 'Latitude',
                               hint: '35.6595',
@@ -257,7 +257,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildCuteTextField(
+                            child: _buildTextField(
                               controller: lngController,
                               label: 'Longitude',
                               hint: '139.7004',
@@ -274,8 +274,8 @@ Future<LocationStamp?> showLocationPickerDialog(
                           statusText!,
                           style: TextStyle(
                             color: isSuccess
-                                ? PastelColors.mint
-                                : PastelColors.pinkDeep,
+                                ? AppColors.mint
+                                : AppColors.pinkDeep,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -295,12 +295,12 @@ Future<LocationStamp?> showLocationPickerDialog(
                             icon: const Icon(
                               Icons.gps_fixed_rounded,
                               size: 16,
-                              color: PastelColors.mint,
+                              color: AppColors.mint,
                             ),
                             label: const Text(
                               'Use GPS',
                               style: TextStyle(
-                                color: PastelColors.mint,
+                                color: AppColors.mint,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -312,7 +312,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                                 child: const Text(
                                   'Cancel',
                                   style: TextStyle(
-                                    color: PastelColors.textMuted,
+                                    color: AppColors.textMuted,
                                   ),
                                 ),
                               ),
@@ -401,11 +401,11 @@ Future<LocationStamp?> showLocationPickerDialog(
                                     vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    gradient: PastelColors.magicGradient,
+                                    gradient: AppColors.magicGradient,
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: PastelColors.pink.withValues(
+                                        color: AppColors.pink.withValues(
                                           alpha: 0.4,
                                         ),
                                         blurRadius: 10,
@@ -416,7 +416,7 @@ Future<LocationStamp?> showLocationPickerDialog(
                                   child: const Text(
                                     'Save Tag',
                                     style: TextStyle(
-                                      color: PastelColors.textDark,
+                                      color: AppColors.textDark,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                     ),
@@ -444,7 +444,7 @@ Future<LocationStamp?> showLocationPickerDialog(
   }
 }
 
-Widget _buildCuteTextField({
+Widget _buildTextField({
   required TextEditingController controller,
   required String label,
   required String hint,
@@ -456,26 +456,26 @@ Widget _buildCuteTextField({
     keyboardType: isNumeric
         ? const TextInputType.numberWithOptions(signed: true, decimal: true)
         : TextInputType.text,
-    style: const TextStyle(color: PastelColors.textLight, fontSize: 13),
+    style: const TextStyle(color: AppColors.textLight, fontSize: 13),
     decoration: InputDecoration(
       labelText: label,
       hintText: hint,
       prefixIcon: icon != null
-          ? Icon(icon, color: PastelColors.lavender, size: 18)
+          ? Icon(icon, color: AppColors.lavender, size: 18)
           : null,
       filled: true,
-      fillColor: PastelColors.cardDark.withValues(alpha: 0.8),
-      hintStyle: const TextStyle(color: PastelColors.textMuted, fontSize: 12),
-      labelStyle: const TextStyle(color: PastelColors.lavender, fontSize: 12),
+      fillColor: AppColors.cardDark.withValues(alpha: 0.8),
+      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+      labelStyle: const TextStyle(color: AppColors.lavender, fontSize: 12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
-          color: PastelColors.lavender.withValues(alpha: 0.25),
+          color: AppColors.lavender.withValues(alpha: 0.25),
         ),
         borderRadius: BorderRadius.circular(16),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: PastelColors.pink, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.pink, width: 1.5),
         borderRadius: BorderRadius.circular(16),
       ),
     ),

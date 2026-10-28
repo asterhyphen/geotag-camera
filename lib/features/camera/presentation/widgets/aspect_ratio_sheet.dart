@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/pastel_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../domain/models/aspect_ratio_option.dart';
 
 void showAspectRatioSheet({
@@ -16,10 +16,10 @@ void showAspectRatioSheet({
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: PastelColors.surfaceDark,
+          color: AppColors.surfaceDark,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           border: Border.all(
-            color: PastelColors.lavender.withValues(alpha: 0.3),
+            color: AppColors.lavender.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -30,7 +30,7 @@ void showAspectRatioSheet({
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: PastelColors.lavender.withValues(alpha: 0.4),
+                color: AppColors.lavender.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -38,7 +38,7 @@ void showAspectRatioSheet({
             const Text(
               'Aspect Ratio',
               style: TextStyle(
-                color: PastelColors.textLight,
+                color: AppColors.textLight,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -64,13 +64,13 @@ void showAspectRatioSheet({
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? PastelColors.pink.withValues(alpha: 0.25)
-                          : PastelColors.cardDark.withValues(alpha: 0.6),
+                          ? AppColors.pink.withValues(alpha: 0.25)
+                          : AppColors.cardDark.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? PastelColors.pink
-                            : PastelColors.lavender.withValues(alpha: 0.2),
+                            ? AppColors.pink
+                            : AppColors.lavender.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                     ),
@@ -79,8 +79,8 @@ void showAspectRatioSheet({
                         Icon(
                           item.icon,
                           color: isSelected
-                              ? PastelColors.pink
-                              : PastelColors.textMuted,
+                              ? AppColors.pink
+                              : AppColors.textMuted,
                           size: 26,
                         ),
                         const SizedBox(height: 6),
@@ -88,8 +88,8 @@ void showAspectRatioSheet({
                           item.label,
                           style: TextStyle(
                             color: isSelected
-                                ? PastelColors.pink
-                                : PastelColors.textLight,
+                                ? AppColors.pink
+                                : AppColors.textLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
@@ -97,7 +97,7 @@ void showAspectRatioSheet({
                         Text(
                           item.sub,
                           style: const TextStyle(
-                            color: PastelColors.textMuted,
+                            color: AppColors.textMuted,
                             fontSize: 10,
                           ),
                         ),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// Animated Vintage Focus Reticle
-class VintageFocusRing extends StatelessWidget {
+/// Camera focus reticle indicator
+class FocusRing extends StatelessWidget {
   final Offset position;
   final double exposureOffset;
 
-  const VintageFocusRing({
+  const FocusRing({
     super.key,
     required this.position,
     this.exposureOffset = 0.0,
@@ -26,14 +26,14 @@ class VintageFocusRing extends StatelessWidget {
             children: [
               CustomPaint(
                 size: const Size(64, 64),
-                painter: _VintageFocusPainter(),
+                painter: _FocusPainter(),
               ),
               Container(
                 width: 4,
                 height: 4,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: PastelColors.butter,
+                  color: AppColors.butter,
                 ),
               ),
             ],
@@ -44,11 +44,11 @@ class VintageFocusRing extends StatelessWidget {
   }
 }
 
-class _VintageFocusPainter extends CustomPainter {
+class _FocusPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = PastelColors.butter.withValues(alpha: 0.85)
+      ..color = AppColors.butter.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 

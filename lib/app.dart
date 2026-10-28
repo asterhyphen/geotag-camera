@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
-import 'core/theme/pastel_theme.dart';
+import 'core/theme/app_theme.dart';
 import 'features/camera/presentation/screens/camera_screen.dart';
 
 class MyApp extends StatelessWidget {
@@ -14,12 +14,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: PastelColors.bgDark,
+        scaffoldBackgroundColor: AppColors.bgDark,
         colorScheme: const ColorScheme.dark(
-          primary: PastelColors.pink,
-          secondary: PastelColors.lavender,
-          surface: PastelColors.surfaceDark,
-          tertiary: PastelColors.mint,
+          primary: AppColors.pink,
+          secondary: AppColors.lavender,
+          surface: AppColors.surfaceDark,
+          tertiary: AppColors.mint,
         ),
         fontFamily: null,
         splashFactory: InkSparkle.splashFactory,

@@ -1,10 +1,10 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/pastel_theme.dart';
-import '../../../../core/widgets/vintage_focus_ring.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/focus_ring.dart';
 import '../../../location/domain/models/location_stamp.dart';
 import '../../../watermark/data/services/date_time_formatter.dart';
-import '../../../watermark/presentation/widgets/vintage_watermark_area_guide.dart';
+import '../../../watermark/presentation/widgets/watermark_area_guide.dart';
 import 'camera_preview_widget.dart';
 import 'film_frame_overlay.dart';
 import 'grid_overlay.dart';
@@ -59,12 +59,12 @@ class CameraViewfinder extends StatelessWidget {
               color: Colors.black,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: PastelColors.lavender.withValues(alpha: 0.35),
+                color: AppColors.lavender.withValues(alpha: 0.35),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: PastelColors.lavender.withValues(alpha: 0.2),
+                  color: AppColors.lavender.withValues(alpha: 0.2),
                   blurRadius: 18,
                   spreadRadius: 2,
                 ),
@@ -98,16 +98,16 @@ class CameraViewfinder extends StatelessWidget {
                       fit: StackFit.expand,
                       children: [
                         CameraPreviewWidget(controller: controller),
-                        if (showGrid) const CuteGridOverlay(),
+                        if (showGrid) const GridOverlay(),
 
-                        // Vintage 35mm Film Frame Overlay
-                        VintageFilmFrameOverlay(
+                        // Frame Overlay
+                        FilmFrameOverlay(
                           filterName: filter,
                           geocamOn: geocamOn,
                         ),
 
-                        // Watermark Area Preview Rectangle (shows area hidden by watermark)
-                        VintageWatermarkAreaGuide(
+                        // Watermark Area Preview Rectangle
+                        WatermarkAreaGuide(
                           visible: geocamOn,
                           location: effectiveLocation.location,
                           address: effectiveLocation.address,
@@ -119,7 +119,7 @@ class CameraViewfinder extends StatelessWidget {
 
                         // Focus Reticle Ring
                         if (focusPoint != null)
-                          VintageFocusRing(
+                          FocusRing(
                             position: focusPoint!,
                             exposureOffset: exposureOffset,
                           ),
@@ -132,7 +132,7 @@ class CameraViewfinder extends StatelessWidget {
                               return const SizedBox.shrink();
                             }
                             return Container(
-                              color: PastelColors.pinkLight.withValues(
+                              color: AppColors.pinkLight.withValues(
                                 alpha: flashAnim.value * 0.85,
                               ),
                             );

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/pastel_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 
-class VintageFilmFrameOverlay extends StatelessWidget {
+class FilmFrameOverlay extends StatelessWidget {
   final String filterName;
   final bool geocamOn;
 
-  const VintageFilmFrameOverlay({
+  const FilmFrameOverlay({
     super.key,
     required this.filterName,
     this.geocamOn = false,
@@ -18,8 +18,8 @@ class VintageFilmFrameOverlay extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Corner ticks & rangefinder reticle
-          CustomPaint(painter: VintageFramePainter()),
-          // Top Vintage Markings Bar
+          CustomPaint(painter: FramePainter()),
+          // Top Markings Bar
           Positioned(
             top: 10,
             left: 12,
@@ -39,7 +39,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
                         color: Colors.black.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: PastelColors.butter.withValues(alpha: 0.5),
+                          color: AppColors.butter.withValues(alpha: 0.5),
                           width: 0.8,
                         ),
                       ),
@@ -48,12 +48,12 @@ class VintageFilmFrameOverlay extends StatelessWidget {
                           Icon(
                             Icons.play_arrow_rounded,
                             size: 10,
-                            color: PastelColors.butter,
+                            color: AppColors.butter,
                           ),
                           Text(
                             '24A',
                             style: TextStyle(
-                              color: PastelColors.butter,
+                              color: AppColors.butter,
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.0,
@@ -66,7 +66,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
                     Text(
                       '35mm FILM',
                       style: TextStyle(
-                        color: PastelColors.textLight.withValues(alpha: 0.65),
+                        color: AppColors.textLight.withValues(alpha: 0.65),
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.2,
@@ -83,14 +83,14 @@ class VintageFilmFrameOverlay extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: PastelColors.lavender.withValues(alpha: 0.25),
+                      color: AppColors.lavender.withValues(alpha: 0.25),
                       width: 0.8,
                     ),
                   ),
                   child: Text(
                     'ISO 400 • ${filterName.toUpperCase()}',
                     style: TextStyle(
-                      color: PastelColors.peach.withValues(alpha: 0.95),
+                      color: AppColors.peach.withValues(alpha: 0.95),
                       fontSize: 8.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
@@ -100,7 +100,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
               ],
             ),
           ),
-          // Bottom Vintage Markings (hidden when watermark zone is active)
+          // Bottom Markings (hidden when watermark zone is active)
           if (!geocamOn)
             Positioned(
               bottom: 10,
@@ -114,7 +114,7 @@ class VintageFilmFrameOverlay extends StatelessWidget {
                 child: const Text(
                   'GEOCAM 1:1.8/35mm',
                   style: TextStyle(
-                    color: PastelColors.lavender,
+                    color: AppColors.lavender,
                     fontSize: 8.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.0,
@@ -128,11 +128,11 @@ class VintageFilmFrameOverlay extends StatelessWidget {
   }
 }
 
-class VintageFramePainter extends CustomPainter {
+class FramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = PastelColors.butter.withValues(alpha: 0.7)
+      ..color = AppColors.butter.withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
@@ -191,7 +191,7 @@ class VintageFramePainter extends CustomPainter {
 
     // Center crosshair
     final centerPaint = Paint()
-      ..color = PastelColors.lavender.withValues(alpha: 0.35)
+      ..color = AppColors.lavender.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

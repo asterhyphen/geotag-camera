@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/pastel_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 
-/// A vintage dashed/gradient preview rectangle indicating the exact area covered by the watermark in the final photo
-class VintageWatermarkAreaGuide extends StatelessWidget {
+/// Preview rectangle indicating the area covered by the watermark in the final photo
+class WatermarkAreaGuide extends StatelessWidget {
   final bool visible;
   final String location;
   final String address;
@@ -11,7 +11,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
   final double previewHeight;
   final double previewWidth;
 
-  const VintageWatermarkAreaGuide({
+  const WatermarkAreaGuide({
     super.key,
     required this.visible,
     this.location = '',
@@ -53,7 +53,9 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Dashed guide boundary line & corner markers along the top of the watermark zone
-                CustomPaint(painter: _WatermarkBorderPainter()),
+                CustomPaint(
+                  painter: _WatermarkBorderPainter(),
+                ),
 
                 // Top indicator tag badge
                 Positioned(
@@ -68,7 +70,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: PastelColors.peach.withValues(alpha: 0.6),
+                        color: AppColors.peach.withValues(alpha: 0.6),
                         width: 0.8,
                       ),
                     ),
@@ -78,13 +80,13 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
                         Icon(
                           Icons.layers_outlined,
                           size: 9,
-                          color: PastelColors.peach,
+                          color: AppColors.peach,
                         ),
                         SizedBox(width: 3),
                         Text(
                           'WATERMARK ZONE (20%)',
                           style: TextStyle(
-                            color: PastelColors.peach,
+                            color: AppColors.peach,
                             fontSize: 7.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.6,
@@ -139,7 +141,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: PastelColors.lavender,
+                            color: AppColors.lavender,
                             fontSize: (overlayH * 0.11).clamp(7.5, 9.5),
                             fontWeight: FontWeight.w600,
                           ),
@@ -150,7 +152,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: PastelColors.mint,
+                            color: AppColors.mint,
                             fontSize: (overlayH * 0.11).clamp(7.5, 9.5),
                             fontWeight: FontWeight.w600,
                           ),
@@ -159,7 +161,7 @@ class VintageWatermarkAreaGuide extends StatelessWidget {
                         Text(
                           '📍 Geotag Watermark Area',
                           style: TextStyle(
-                            color: PastelColors.lavender.withValues(alpha: 0.8),
+                            color: AppColors.lavender.withValues(alpha: 0.8),
                             fontSize: (overlayH * 0.14).clamp(9.0, 12.0),
                             fontStyle: FontStyle.italic,
                           ),
@@ -200,7 +202,7 @@ class _WatermarkBorderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = PastelColors.peach.withValues(alpha: 0.7)
+      ..color = AppColors.peach.withValues(alpha: 0.7)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -219,7 +221,7 @@ class _WatermarkBorderPainter extends CustomPainter {
 
     // Corner tick markers
     final cornerPaint = Paint()
-      ..color = PastelColors.peach
+      ..color = AppColors.peach
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 

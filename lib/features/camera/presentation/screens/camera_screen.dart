@@ -7,11 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/pastel_theme.dart';
-import '../../../../core/widgets/cute_filter_selector.dart';
-import '../../../../core/widgets/cute_zoom_bar.dart';
-import '../../../../core/widgets/vintage_alert.dart';
-import '../../../../core/widgets/vintage_exposure_slider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_alert.dart';
+import '../../../../core/widgets/exposure_slider.dart';
+import '../../../../core/widgets/filter_selector.dart';
+import '../../../../core/widgets/zoom_bar.dart';
 import '../../../location/presentation/dialogs/location_picker_dialog.dart';
 import '../../../location/presentation/providers/location_provider.dart';
 import '../../../watermark/data/services/dart_image_service.dart';
@@ -255,7 +255,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       if (!mounted) return;
       _showAlert(
         'Flashlight is only available on the rear camera',
-        variant: VintageAlertVariant.warning,
+        variant: AlertVariant.warning,
         icon: Icons.flashlight_off_rounded,
       );
       return;
@@ -277,7 +277,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       settingsNotifier.setTorchSupported(false);
       _showAlert(
         'This camera does not support flashlight control',
-        variant: VintageAlertVariant.warning,
+        variant: AlertVariant.warning,
         icon: Icons.warning_amber_rounded,
       );
     }
@@ -285,11 +285,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   void _showAlert(
     String message, {
-    VintageAlertVariant variant = VintageAlertVariant.info,
+    AlertVariant variant = AlertVariant.info,
     IconData? icon,
   }) {
     if (!mounted) return;
-    showVintageAlert(context, message: message, variant: variant, icon: icon);
+    showAppAlert(context, message: message, variant: variant, icon: icon);
   }
 
   Future<void> _capture() async {
@@ -327,10 +327,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       final currentGeocamOn = settings.geocamOn;
       final filePath = file.path;
 
-      // UNBLOCK UI IMMEDIATELY! Viewfinder and Shutter are responsive for the next shot
+      // Unblock UI immediately for the next shot
       settingsNotifier.setProcessing(false);
 
-      // Background asynchronous zero-copy native processing
+      // Background asynchronous processing
       unawaited(() async {
         final bgWatch = Stopwatch()..start();
         final success = await _nativeImageService.processAndSaveImageNative(
@@ -349,7 +349,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         if (success) {
           _showAlert(
             'Photo saved to gallery',
-            variant: VintageAlertVariant.success,
+            variant: AlertVariant.success,
             icon: Icons.photo_library_rounded,
           );
         } else {
@@ -377,14 +377,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             await _nativeImageService.saveToGallery(finalImage);
             _showAlert(
               'Photo saved to gallery',
-              variant: VintageAlertVariant.success,
+              variant: AlertVariant.success,
               icon: Icons.photo_library_rounded,
             );
           } catch (e) {
             debugPrint('[GeoCam Fallback Error] $e');
             _showAlert(
               'Failed to save photo: $e',
-              variant: VintageAlertVariant.error,
+              variant: AlertVariant.error,
             );
           }
         }
@@ -397,7 +397,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     } catch (e) {
       debugPrint('[GeoCam Capture Error] $e');
       settingsNotifier.setProcessing(false);
-      _showAlert('Capture failed: $e', variant: VintageAlertVariant.error);
+      _showAlert('Capture failed: $e', variant: AlertVariant.error);
     }
   }
 
@@ -436,7 +436,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   Widget build(BuildContext context) {
     if (!_ready) {
       return Scaffold(
-        backgroundColor: PastelColors.bgDark,
+        backgroundColor: AppColors.bgDark,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -447,13 +447,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: PastelColors.magicGradient,
-                  boxShadow: PastelShadows.glow(PastelColors.pink),
+                  gradient: AppColors.magicGradient,
+                  boxShadow: AppShadows.glow(AppColors.pink),
                 ),
                 child: const CircularProgressIndicator(
                   strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    PastelColors.textDark,
+                    AppColors.textDark,
                   ),
                 ),
               ),
@@ -461,7 +461,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               const Text(
                 'Starting Geocam...',
                 style: TextStyle(
-                  color: PastelColors.textLight,
+                  color: AppColors.textLight,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
@@ -477,17 +477,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     final settingsNotifier = ref.read(cameraSettingsProvider.notifier);
     final locationState = ref.watch(locationProvider);
 
-    final isFrontCamera =
-        _cameras.isNotEmpty &&
+    final isFrontCamera = _cameras.isNotEmpty &&
         _cameras[settings.cameraIndex].lensDirection ==
             CameraLensDirection.front;
 
     return Scaffold(
-      backgroundColor: PastelColors.bgDark,
+      backgroundColor: AppColors.bgDark,
       body: SafeArea(
         child: Column(
           children: [
-            // TOP FLOATING CONTROL ISLAND
+            // Top control island
             TopControlBar(
               torchOn: settings.torchOn,
               showExposureSlider: settings.showExposureSlider,
@@ -506,7 +505,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               },
             ),
 
-            // STATUS RIBBON (Location & Lens Info)
+            // Status ribbon (Location, EV, Lens, & Ratio)
             StatusRibbon(
               customLocation: locationState.customLocation,
               cachedLocationStamp: locationState.cachedLocationStamp,
@@ -519,10 +518,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               onShowAspectRatioSheet: _showAspectRatioSheetModal,
             ),
 
-            // Exposure Slider if open
+            // Exposure Slider
             if (settings.showExposureSlider) ...[
               const SizedBox(height: 6),
-              VintageExposureSlider(
+              ExposureSlider(
                 value: settings.exposureOffset,
                 min: settings.minExposure,
                 max: settings.maxExposure,
@@ -533,7 +532,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             const SizedBox(height: 4),
 
-            // 📷 CAMERA VIEWFINDER (SQUIRCLE FRAMED)
+            // Viewfinder
             Expanded(
               child: CameraViewfinder(
                 controller: controller,
@@ -558,9 +557,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             const SizedBox(height: 8),
 
-            // 🔍 ZOOM BAR
+            // Zoom bar
             Center(
-              child: CuteZoomBar(
+              child: ZoomBar(
                 currentZoom: settings.zoom,
                 minZoom: settings.minZoom,
                 maxZoom: settings.maxZoom,
@@ -573,15 +572,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             const SizedBox(height: 10),
 
-            // 🎨 CUTE FILTER SELECTOR
-            CuteFilterSelector(
+            // Filter selector
+            FilterSelector(
               currentFilter: settings.filter,
               onFilterSelected: settingsNotifier.setFilter,
             ),
 
             const SizedBox(height: 14),
 
-            // 🌸 BOTTOM CONTROLS DECK
+            // Bottom controls deck
             BottomControlsDeck(
               onShowAspectRatioSheet: _showAspectRatioSheetModal,
               onCapture: _capture,

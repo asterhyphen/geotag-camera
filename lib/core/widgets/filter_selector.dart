@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
 /// Filter Option model
 class FilterOption {
@@ -21,35 +21,35 @@ const List<FilterOption> kFilterOptions = [
   FilterOption(
     id: 'none',
     name: 'Natural',
-    accentColor: PastelColors.pink,
+    accentColor: AppColors.pink,
     icon: Icons.auto_awesome_rounded,
   ),
   FilterOption(
     id: 'vintage',
     name: 'Vintage',
-    accentColor: PastelColors.peach,
+    accentColor: AppColors.peach,
     icon: Icons.filter_vintage_rounded,
   ),
   FilterOption(
     id: 'mono',
     name: 'Mono',
-    accentColor: PastelColors.lavender,
+    accentColor: AppColors.lavender,
     icon: Icons.contrast_rounded,
   ),
   FilterOption(
     id: 'sepia',
     name: 'Sepia',
-    accentColor: PastelColors.butter,
+    accentColor: AppColors.butter,
     icon: Icons.wb_sunny_rounded,
   ),
 ];
 
-/// Cute horizontal filter carousel
-class CuteFilterSelector extends StatelessWidget {
+/// Horizontal camera filter selector carousel
+class FilterSelector extends StatelessWidget {
   final String currentFilter;
   final ValueChanged<String> onFilterSelected;
 
-  const CuteFilterSelector({
+  const FilterSelector({
     super.key,
     required this.currentFilter,
     required this.onFilterSelected,
@@ -62,10 +62,10 @@ class CuteFilterSelector extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: PastelColors.cardDark.withValues(alpha: 0.7),
+        color: AppColors.cardDark.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: PastelColors.lavender.withValues(alpha: 0.2),
+          color: AppColors.lavender.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -111,16 +111,16 @@ class CuteFilterSelector extends StatelessWidget {
                       opt.icon,
                       size: 14,
                       color: isSelected
-                          ? PastelColors.textDark
-                          : PastelColors.textMuted,
+                          ? AppColors.textDark
+                          : AppColors.textMuted,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       opt.name,
                       style: TextStyle(
                         color: isSelected
-                            ? PastelColors.textDark
-                            : PastelColors.textMuted,
+                            ? AppColors.textDark
+                            : AppColors.textMuted,
                         fontSize: 12,
                         fontWeight: isSelected
                             ? FontWeight.w700

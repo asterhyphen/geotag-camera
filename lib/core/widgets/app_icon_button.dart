@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// A cute frosted pastel icon button with bouncy feedback and active glow
-class CuteIconButton extends StatelessWidget {
+/// An icon button with bouncy feedback and active state glow
+class AppIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   final bool isActive;
@@ -14,13 +14,13 @@ class CuteIconButton extends StatelessWidget {
   final String? tooltip;
   final Widget? badge;
 
-  const CuteIconButton({
+  const AppIconButton({
     super.key,
     required this.icon,
     required this.onPressed,
     this.isActive = false,
-    this.activeColor = PastelColors.pinkDeep,
-    this.inactiveColor = PastelColors.textLight,
+    this.activeColor = AppColors.pinkDeep,
+    this.inactiveColor = AppColors.textLight,
     this.activeBgColor,
     this.size = 46,
     this.iconSize = 22,
@@ -47,12 +47,12 @@ class CuteIconButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: isActive
                   ? effectiveActiveBg
-                  : PastelColors.cardDark.withValues(alpha: 0.65),
+                  : AppColors.cardDark.withValues(alpha: 0.65),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive
                     ? activeColor.withValues(alpha: 0.6)
-                    : PastelColors.lavender.withValues(alpha: 0.2),
+                    : AppColors.lavender.withValues(alpha: 0.2),
                 width: 1.5,
               ),
               boxShadow: isActive

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-/// Vintage Exposure Compensation Slider
-class VintageExposureSlider extends StatelessWidget {
+/// Camera exposure compensation slider
+class ExposureSlider extends StatelessWidget {
   final double value;
   final double min;
   final double max;
   final ValueChanged<double> onChanged;
   final VoidCallback? onClose;
 
-  const VintageExposureSlider({
+  const ExposureSlider({
     super.key,
     required this.value,
     required this.min,
@@ -27,14 +27,14 @@ class VintageExposureSlider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: PastelColors.surfaceDark.withValues(alpha: 0.92),
+        color: AppColors.surfaceDark.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: PastelColors.butter.withValues(alpha: 0.35),
+          color: AppColors.butter.withValues(alpha: 0.35),
           width: 1.2,
         ),
-        boxShadow: PastelShadows.soft(
-          color: PastelColors.butter.withValues(alpha: 0.15),
+        boxShadow: AppShadows.soft(
+          color: AppColors.butter.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -42,13 +42,13 @@ class VintageExposureSlider extends StatelessWidget {
           const Icon(
             Icons.wb_sunny_rounded,
             size: 16,
-            color: PastelColors.butter,
+            color: AppColors.butter,
           ),
           const SizedBox(width: 8),
           Text(
             evString,
             style: const TextStyle(
-              color: PastelColors.butter,
+              color: AppColors.butter,
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
@@ -57,12 +57,12 @@ class VintageExposureSlider extends StatelessWidget {
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: PastelColors.butter,
-                inactiveTrackColor: PastelColors.lavender.withValues(
+                activeTrackColor: AppColors.butter,
+                inactiveTrackColor: AppColors.lavender.withValues(
                   alpha: 0.25,
                 ),
-                thumbColor: PastelColors.butter,
-                overlayColor: PastelColors.butter.withValues(alpha: 0.2),
+                thumbColor: AppColors.butter,
+                overlayColor: AppColors.butter.withValues(alpha: 0.2),
                 trackHeight: 3.0,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
               ),
@@ -84,12 +84,12 @@ class VintageExposureSlider extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: PastelColors.cardDark.withValues(alpha: 0.6),
+                  color: AppColors.cardDark.withValues(alpha: 0.6),
                 ),
                 child: const Icon(
                   Icons.close_rounded,
                   size: 14,
-                  color: PastelColors.textMuted,
+                  color: AppColors.textMuted,
                 ),
               ),
             ),

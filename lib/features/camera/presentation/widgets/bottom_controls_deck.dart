@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/pastel_theme.dart';
-import '../../../../core/widgets/cute_icon_button.dart';
-import '../../../../core/widgets/cute_shutter_button.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_icon_button.dart';
+import '../../../../core/widgets/shutter_button.dart';
 
 class BottomControlsDeck extends StatelessWidget {
   final VoidCallback onShowAspectRatioSheet;
@@ -26,28 +26,28 @@ class BottomControlsDeck extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Ratio / Aspect Button
-          CuteIconButton(
+          AppIconButton(
             icon: Icons.aspect_ratio_rounded,
             size: 52,
             iconSize: 24,
-            activeColor: PastelColors.sky,
+            activeColor: AppColors.sky,
             tooltip: 'Change Aspect Ratio',
             onPressed: onShowAspectRatioSheet,
           ),
 
-          // Big Cute Shutter Button
-          CuteShutterButton(
+          // Shutter Button
+          ShutterButton(
             onTap: onCapture,
             processing: isProcessing,
             size: 82,
           ),
 
           // Flip Camera Button
-          CuteIconButton(
+          AppIconButton(
             icon: Icons.flip_camera_ios_rounded,
             size: 52,
             iconSize: 24,
-            activeColor: PastelColors.lavender,
+            activeColor: AppColors.lavender,
             tooltip: 'Flip Camera',
             onPressed: onSwitchCamera,
           ),

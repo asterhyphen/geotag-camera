@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../theme/pastel_theme.dart';
+import '../theme/app_theme.dart';
 
-enum VintageAlertVariant { info, success, warning, error }
+enum AlertVariant { info, success, warning, error }
 
-/// A vintage pastel floating alert toast for bottom notifications and errors
-void showVintageAlert(
+/// Floating toast alert for notifications and status feedback
+void showAppAlert(
   BuildContext context, {
   required String message,
-  VintageAlertVariant variant = VintageAlertVariant.info,
+  AlertVariant variant = AlertVariant.info,
   IconData? icon,
   Duration duration = const Duration(milliseconds: 2500),
 }) {
@@ -15,20 +15,20 @@ void showVintageAlert(
   IconData defaultIcon;
 
   switch (variant) {
-    case VintageAlertVariant.success:
-      accentColor = PastelColors.mint;
+    case AlertVariant.success:
+      accentColor = AppColors.mint;
       defaultIcon = Icons.check_circle_rounded;
       break;
-    case VintageAlertVariant.warning:
-      accentColor = PastelColors.butter;
+    case AlertVariant.warning:
+      accentColor = AppColors.butter;
       defaultIcon = Icons.warning_amber_rounded;
       break;
-    case VintageAlertVariant.error:
-      accentColor = PastelColors.pinkDeep;
+    case AlertVariant.error:
+      accentColor = AppColors.pinkDeep;
       defaultIcon = Icons.error_outline_rounded;
       break;
-    case VintageAlertVariant.info:
-      accentColor = PastelColors.lavender;
+    case AlertVariant.info:
+      accentColor = AppColors.lavender;
       defaultIcon = Icons.info_outline_rounded;
       break;
   }
@@ -45,7 +45,7 @@ void showVintageAlert(
       content: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: PastelColors.surfaceDark.withValues(alpha: 0.95),
+          color: AppColors.surfaceDark.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: accentColor.withValues(alpha: 0.5),
@@ -80,7 +80,7 @@ void showVintageAlert(
               child: Text(
                 message,
                 style: const TextStyle(
-                  color: PastelColors.textLight,
+                  color: AppColors.textLight,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.2,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/pastel_theme.dart';
-import '../../../../core/widgets/cute_badge.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../location/domain/models/location_stamp.dart';
 import '../../domain/models/aspect_ratio_option.dart';
 
@@ -38,21 +38,21 @@ class StatusRibbon extends StatelessWidget {
         children: [
           // Location Status Pill (Tap to edit custom location)
           Flexible(
-            child: CuteBadge(
+            child: StatusBadge(
               icon: customLocation != null
                   ? Icons.edit_location_alt_rounded
                   : (cachedLocationStamp != null
-                        ? Icons.location_on_rounded
-                        : Icons.gps_fixed_rounded),
+                      ? Icons.location_on_rounded
+                      : Icons.gps_fixed_rounded),
               label: customLocation != null
                   ? customLocation!.location
                   : (cachedLocationStamp != null &&
-                            cachedLocationStamp!.location.isNotEmpty
-                        ? cachedLocationStamp!.location
-                        : 'GPS Auto'),
+                          cachedLocationStamp!.location.isNotEmpty
+                      ? cachedLocationStamp!.location
+                      : 'GPS Auto'),
               color: customLocation != null
-                  ? PastelColors.peachDeep
-                  : PastelColors.mint,
+                  ? AppColors.peachDeep
+                  : AppColors.mint,
               onTap: onOpenLocationPicker,
             ),
           ),
@@ -63,13 +63,13 @@ class StatusRibbon extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Exposure EV Badge (Quick toggle)
-              CuteBadge(
+              StatusBadge(
                 icon: Icons.wb_sunny_rounded,
                 label:
                     '${exposureOffset >= 0 ? '+' : ''}${exposureOffset.toStringAsFixed(1)} EV',
                 color: showExposureSlider
-                    ? PastelColors.butter
-                    : PastelColors.lavender,
+                    ? AppColors.butter
+                    : AppColors.lavender,
                 onTap: () {
                   HapticFeedback.selectionClick();
                   onToggleExposureSlider();
@@ -77,19 +77,19 @@ class StatusRibbon extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               // Selfie / Rear Badge
-              CuteBadge(
+              StatusBadge(
                 icon: isFrontCamera
                     ? Icons.face_retouching_natural_rounded
                     : Icons.camera_rear_rounded,
                 label: isFrontCamera ? 'Selfie' : 'Rear',
-                color: PastelColors.lavender,
+                color: AppColors.lavender,
               ),
               const SizedBox(width: 6),
               // Ratio Badge
-              CuteBadge(
+              StatusBadge(
                 icon: Icons.aspect_ratio_rounded,
                 label: getAspectRatioLabel(aspectRatio),
-                color: PastelColors.sky,
+                color: AppColors.sky,
                 onTap: onShowAspectRatioSheet,
               ),
             ],
